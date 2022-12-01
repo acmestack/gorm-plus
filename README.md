@@ -7,7 +7,7 @@ go get github.com/zouchangfu/gorm-plus
 
 使用demo：
 
-```
+```go
 
 func init() {
 	dsn := "root:root-abcd-1234@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"

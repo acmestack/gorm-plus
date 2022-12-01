@@ -2,7 +2,7 @@ package mapper
 
 import (
 	"fmt"
-	"gorm-plus/constants"
+	"github.com/zouchangfu/gorm-plus/constants"
 	"strings"
 )
 

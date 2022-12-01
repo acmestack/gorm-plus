@@ -3,7 +3,7 @@
 
 下载使用：
 
-go get github.com/zouchangfu/gorm-plus
+go get github.com/gorm-plus/gorm-plus
 
 使用demo：
 

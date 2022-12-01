@@ -1,4 +1,4 @@
-module gorm-plus
+module github.com/zouchangfu/gorm-plus
 
 go 1.18
 

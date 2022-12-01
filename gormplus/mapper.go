@@ -1,4 +1,4 @@
-package mapper
+package gormplus
 
 import (
 	"gorm.io/gorm"

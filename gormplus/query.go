@@ -1,8 +1,8 @@
-package mapper
+package gormplus
 
 import (
 	"fmt"
-	"github.com/zouchangfu/gorm-plus/constants"
+	"github.com/gorm-plus/gorm-plus/constants"
 	"strings"
 )
 

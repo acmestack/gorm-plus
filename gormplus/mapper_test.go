@@ -117,7 +117,7 @@ func TestSelectOne(t *testing.T) {
 
 func TestSelectList(t *testing.T) {
 	q := Query[Test1]{}
-	q.Group("price", "code")
+	q.Group("price", "code").Having("count(*) > ?", 1)
 	db, result := SelectList(&q)
 	fmt.Println(db.RowsAffected)
 	for _, v := range result {

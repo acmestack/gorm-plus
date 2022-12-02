@@ -7,12 +7,14 @@ import (
 )
 
 type Query[T any] struct {
-	Columns      []string
-	OrderBuilder strings.Builder
-	GroupBuilder strings.Builder
-	QueryBuilder strings.Builder
-	Args         []any
-	LastCond     string
+	Columns       []string
+	QueryBuilder  strings.Builder
+	QueryArgs     []any
+	OrderBuilder  strings.Builder
+	GroupBuilder  strings.Builder
+	HavingBuilder strings.Builder
+	HavingArgs    []any
+	LastCond      string
 }
 
 func (q *Query[T]) Eq(column string, val any) *Query[T] {
@@ -113,6 +115,12 @@ func (q *Query[T]) Group(columns ...string) *Query[T] {
 	return q
 }
 
+func (q *Query[T]) Having(having string, args ...any) *Query[T] {
+	q.HavingBuilder.WriteString(having)
+	q.HavingArgs = append(q.HavingArgs, args)
+	return q
+}
+
 func (q *Query[T]) addCond(column string, val any, condType string) {
 	if q.LastCond != constants.And && q.LastCond != constants.Or && q.QueryBuilder.Len() > 0 {
 		q.QueryBuilder.WriteString(constants.And)
@@ -122,7 +130,7 @@ func (q *Query[T]) addCond(column string, val any, condType string) {
 	q.QueryBuilder.WriteString(cond)
 	q.QueryBuilder.WriteString(" ")
 	q.LastCond = ""
-	q.Args = append(q.Args, val)
+	q.QueryArgs = append(q.QueryArgs, val)
 }
 
 func (q *Query[T]) buildOrder(orderType string, columns ...string) {

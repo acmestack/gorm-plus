@@ -45,7 +45,7 @@ func DeleteByIds[T any](ids ...any) *gorm.DB {
 
 func Delete[T any](q *Query[T]) *gorm.DB {
 	var entity T
-	resultDb := GormDb.Where(q.QueryBuilder.String(), q.Args...).Delete(&entity)
+	resultDb := GormDb.Where(q.QueryBuilder.String(), q.QueryArgs...).Delete(&entity)
 	return resultDb
 }
 
@@ -57,7 +57,7 @@ func UpdateById[T any](id any, entity *T) *gorm.DB {
 }
 
 func Update[T any](q *Query[T], entity *T) *gorm.DB {
-	resultDb := GormDb.Where(q.QueryBuilder.String(), q.Args...).Updates(entity)
+	resultDb := GormDb.Where(q.QueryBuilder.String(), q.QueryArgs...).Updates(entity)
 	return resultDb
 }
 
@@ -75,23 +75,29 @@ func SelectByIds[T any](ids ...any) (*gorm.DB, []T) {
 
 func SelectOne[T any](q *Query[T]) (*gorm.DB, T) {
 	var entity T
-	resultDb := GormDb.Select(q.Columns).Where(q.QueryBuilder.String(), q.Args...).First(&entity)
+	resultDb := GormDb.Select(q.Columns).Where(q.QueryBuilder.String(), q.QueryArgs...).First(&entity)
 	return resultDb, entity
 }
 
 func SelectList[T any](q *Query[T]) (*gorm.DB, []T) {
 	var results []T
-	resultDb := GormDb.Select(q.Columns).Where(q.QueryBuilder.String(), q.Args...).
+	resultDb := GormDb.Select(q.Columns).Where(q.QueryBuilder.String(), q.QueryArgs...).
 		Order(q.OrderBuilder.String())
+
 	if q.GroupBuilder.Len() > 0 {
 		resultDb.Group(q.GroupBuilder.String())
 	}
+
+	if q.HavingBuilder.Len() > 0 {
+		resultDb.Having(q.HavingBuilder.String(), q.HavingArgs...)
+	}
+
 	resultDb.Find(&results)
 	return resultDb, results
 }
 
 func SelectCount[T any](q *Query[T]) (*gorm.DB, int64) {
 	var count int64
-	resultDb := GormDb.Model(new(T)).Where(q.QueryBuilder.String(), q.Args...).Count(&count)
+	resultDb := GormDb.Model(new(T)).Where(q.QueryBuilder.String(), q.QueryArgs...).Count(&count)
 	return resultDb, count
 }

@@ -75,14 +75,29 @@ func SelectByIds[T any](ids ...any) (*gorm.DB, []T) {
 
 func SelectOne[T any](q *Query[T]) (*gorm.DB, T) {
 	var entity T
-	resultDb := GormDb.Select(q.Columns).Where(q.QueryBuilder.String(), q.QueryArgs...).First(&entity)
+	resultDb := GormDb.Select(q.SelectColumns).Where(q.QueryBuilder.String(), q.QueryArgs...).First(&entity)
 	return resultDb, entity
 }
 
 func SelectList[T any](q *Query[T]) (*gorm.DB, []T) {
 	var results []T
-	resultDb := GormDb.Select(q.Columns).Where(q.QueryBuilder.String(), q.QueryArgs...).
-		Order(q.OrderBuilder.String())
+	resultDb := GormDb.Model(new(T))
+
+	if len(q.DistinctColumns) > 0 {
+		resultDb.Distinct(q.DistinctColumns)
+	}
+
+	if len(q.SelectColumns) > 0 {
+		resultDb.Select(q.SelectColumns)
+	}
+
+	if q.QueryBuilder.Len() > 0 {
+		resultDb.Where(q.QueryBuilder.String(), q.QueryArgs...)
+	}
+
+	if q.OrderBuilder.Len() > 0 {
+		resultDb.Order(q.OrderBuilder.String())
+	}
 
 	if q.GroupBuilder.Len() > 0 {
 		resultDb.Group(q.GroupBuilder.String())

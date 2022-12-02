@@ -7,14 +7,15 @@ import (
 )
 
 type Query[T any] struct {
-	Columns       []string
-	QueryBuilder  strings.Builder
-	QueryArgs     []any
-	OrderBuilder  strings.Builder
-	GroupBuilder  strings.Builder
-	HavingBuilder strings.Builder
-	HavingArgs    []any
-	LastCond      string
+	SelectColumns   []string
+	DistinctColumns []string
+	QueryBuilder    strings.Builder
+	QueryArgs       []any
+	OrderBuilder    strings.Builder
+	GroupBuilder    strings.Builder
+	HavingBuilder   strings.Builder
+	HavingArgs      []any
+	LastCond        string
 }
 
 func (q *Query[T]) Eq(column string, val any) *Query[T] {
@@ -76,6 +77,11 @@ func (q *Query[T]) In(column string, val ...any) *Query[T] {
 	return q
 }
 
+func (q *Query[T]) Distinct(column ...string) *Query[T] {
+	q.DistinctColumns = column
+	return q
+}
+
 func (q *Query[T]) And() *Query[T] {
 	q.QueryBuilder.WriteString(constants.And)
 	q.QueryBuilder.WriteString(" ")
@@ -91,7 +97,7 @@ func (q *Query[T]) Or() *Query[T] {
 }
 
 func (q *Query[T]) Select(columns ...string) *Query[T] {
-	q.Columns = append(q.Columns, columns...)
+	q.SelectColumns = append(q.SelectColumns, columns...)
 	return q
 }
 

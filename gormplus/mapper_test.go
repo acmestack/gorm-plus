@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	dsn := "root:root-abcd-1234@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:123456@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
 	GormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -105,7 +105,7 @@ func TestSelectByIds(t *testing.T) {
 
 func TestSelectOne(t *testing.T) {
 	q := Query[Test1]{}
-	q.Eq("code", "D42").Eq("price", 100)
+	q.Eq("code", "F42").Eq("price", 200).Select("code", "price")
 	db, result := SelectOne(&q)
 	fmt.Println(db)
 	fmt.Println(result)
@@ -113,7 +113,7 @@ func TestSelectOne(t *testing.T) {
 
 func TestSelectList(t *testing.T) {
 	q := Query[Test1]{}
-	q.Eq("price", 100)
+	q.Eq("price", 200).Select("code", "price")
 	db, result := SelectList(&q)
 	fmt.Println(db.RowsAffected)
 	fmt.Println(result)

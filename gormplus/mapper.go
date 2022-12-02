@@ -75,13 +75,13 @@ func SelectByIds[T any](ids ...any) (*gorm.DB, []T) {
 
 func SelectOne[T any](q *Query[T]) (*gorm.DB, T) {
 	var entity T
-	resultDb := GormDb.Where(q.QueryBuilder.String(), q.Args...).First(&entity)
+	resultDb := GormDb.Select(q.Columns).Where(q.QueryBuilder.String(), q.Args...).First(&entity)
 	return resultDb, entity
 }
 
 func SelectList[T any](q *Query[T]) (*gorm.DB, []T) {
 	var results []T
-	resultDb := GormDb.Where(q.QueryBuilder.String(), q.Args...).Find(&results)
+	resultDb := GormDb.Select(q.Columns).Where(q.QueryBuilder.String(), q.Args...).Find(&results)
 	return resultDb, results
 }
 

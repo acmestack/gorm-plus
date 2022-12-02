@@ -1,6 +1,7 @@
 package gormplus
 
 import (
+	"encoding/json"
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -116,10 +117,13 @@ func TestSelectOne(t *testing.T) {
 
 func TestSelectList(t *testing.T) {
 	q := Query[Test1]{}
-	q.OrderByDesc("price").OrderByAsc("code")
+	q.Group("price", "code")
 	db, result := SelectList(&q)
 	fmt.Println(db.RowsAffected)
-	fmt.Println(result)
+	for _, v := range result {
+		marshal, _ := json.Marshal(v)
+		fmt.Println(string(marshal))
+	}
 }
 
 func TestSelectCount(t *testing.T) {

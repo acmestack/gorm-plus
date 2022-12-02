@@ -9,6 +9,7 @@ import (
 type Query[T any] struct {
 	Columns      []string
 	OrderBuilder strings.Builder
+	GroupBuilder strings.Builder
 	QueryBuilder strings.Builder
 	Args         []any
 	LastCond     string
@@ -99,6 +100,16 @@ func (q *Query[T]) OrderByDesc(columns ...string) *Query[T] {
 
 func (q *Query[T]) OrderByAsc(columns ...string) *Query[T] {
 	q.buildOrder(constants.Asc, columns...)
+	return q
+}
+
+func (q *Query[T]) Group(columns ...string) *Query[T] {
+	for _, v := range columns {
+		if q.GroupBuilder.Len() > 0 {
+			q.GroupBuilder.WriteString(constants.COMMA)
+		}
+		q.GroupBuilder.WriteString(v)
+	}
 	return q
 }
 

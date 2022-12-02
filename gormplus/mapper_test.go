@@ -117,6 +117,7 @@ func TestSelectOne(t *testing.T) {
 
 func TestSelectList(t *testing.T) {
 	q := Query[Test1]{}
+	q.NotBetween("price", 100, 200)
 	db, result := SelectList(&q)
 	fmt.Println(db.RowsAffected)
 	for _, v := range result {

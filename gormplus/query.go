@@ -77,6 +77,20 @@ func (q *Query[T]) In(column string, val ...any) *Query[T] {
 	return q
 }
 
+func (q *Query[T]) Between(column string, start, end any) *Query[T] {
+	cond := fmt.Sprintf("%s %s ? and ? ", column, constants.Between)
+	q.QueryBuilder.WriteString(cond)
+	q.QueryArgs = append(q.QueryArgs, start, end)
+	return q
+}
+
+func (q *Query[T]) NotBetween(column string, start, end any) *Query[T] {
+	cond := fmt.Sprintf("%s %s %s ? and ? ", column, constants.Not, constants.Between)
+	q.QueryBuilder.WriteString(cond)
+	q.QueryArgs = append(q.QueryArgs, start, end)
+	return q
+}
+
 func (q *Query[T]) Distinct(column ...string) *Query[T] {
 	q.DistinctColumns = column
 	return q

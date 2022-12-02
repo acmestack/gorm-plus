@@ -56,7 +56,7 @@ func (q *Query[T]) Like(column string, val any) *Query[T] {
 
 func (q *Query[T]) NotLike(column string, val any) *Query[T] {
 	s := val.(string)
-	q.addCond(column, "%"+s+"%", constants.Not+constants.Like)
+	q.addCond(column, "%"+s+"%", constants.Not+" "+constants.Like)
 	return q
 }
 
@@ -72,12 +72,32 @@ func (q *Query[T]) LikeRight(column string, val any) *Query[T] {
 	return q
 }
 
+func (q *Query[T]) IsNull(column string) *Query[T] {
+	q.buildAndIfNeed()
+	cond := fmt.Sprintf("%s is null", column)
+	q.QueryBuilder.WriteString(cond)
+	return q
+}
+
+func (q *Query[T]) IsNotNull(column string) *Query[T] {
+	q.buildAndIfNeed()
+	cond := fmt.Sprintf("%s is not null", column)
+	q.QueryBuilder.WriteString(cond)
+	return q
+}
+
 func (q *Query[T]) In(column string, val ...any) *Query[T] {
 	q.addCond(column, val, constants.In)
 	return q
 }
 
+func (q *Query[T]) NotIn(column string, val ...any) *Query[T] {
+	q.addCond(column, val, constants.Not+" "+constants.In)
+	return q
+}
+
 func (q *Query[T]) Between(column string, start, end any) *Query[T] {
+	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s ? and ? ", column, constants.Between)
 	q.QueryBuilder.WriteString(cond)
 	q.QueryArgs = append(q.QueryArgs, start, end)
@@ -85,6 +105,7 @@ func (q *Query[T]) Between(column string, start, end any) *Query[T] {
 }
 
 func (q *Query[T]) NotBetween(column string, start, end any) *Query[T] {
+	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s %s ? and ? ", column, constants.Not, constants.Between)
 	q.QueryBuilder.WriteString(cond)
 	q.QueryArgs = append(q.QueryArgs, start, end)
@@ -142,15 +163,19 @@ func (q *Query[T]) Having(having string, args ...any) *Query[T] {
 }
 
 func (q *Query[T]) addCond(column string, val any, condType string) {
-	if q.LastCond != constants.And && q.LastCond != constants.Or && q.QueryBuilder.Len() > 0 {
-		q.QueryBuilder.WriteString(constants.And)
-		q.QueryBuilder.WriteString(" ")
-	}
+	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s ?", column, condType)
 	q.QueryBuilder.WriteString(cond)
 	q.QueryBuilder.WriteString(" ")
 	q.LastCond = ""
 	q.QueryArgs = append(q.QueryArgs, val)
+}
+
+func (q *Query[T]) buildAndIfNeed() {
+	if q.LastCond != constants.And && q.LastCond != constants.Or && q.QueryBuilder.Len() > 0 {
+		q.QueryBuilder.WriteString(constants.And)
+		q.QueryBuilder.WriteString(" ")
+	}
 }
 
 func (q *Query[T]) buildOrder(orderType string, columns ...string) {

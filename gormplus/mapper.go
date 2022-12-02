@@ -82,7 +82,6 @@ func SelectOne[T any](q *Query[T]) (*gorm.DB, T) {
 func SelectList[T any](q *Query[T]) (*gorm.DB, []T) {
 	var results []T
 	resultDb := GormDb.Model(new(T))
-	//resultDb.Where("price between ? and ?", 100, 200)
 
 	if len(q.DistinctColumns) > 0 {
 		resultDb.Distinct(q.DistinctColumns)

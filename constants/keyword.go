@@ -5,7 +5,7 @@ const (
 	Or      = "OR"
 	In      = "IN"
 	Not     = "NOT"
-	Like    = " LIKE "
+	Like    = "LIKE"
 	Eq      = "="
 	Ne      = "<>"
 	Gt      = ">"

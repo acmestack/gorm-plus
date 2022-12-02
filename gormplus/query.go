@@ -8,6 +8,7 @@ import (
 
 type Query[T any] struct {
 	Columns      []string
+	OrderBuilder strings.Builder
 	QueryBuilder strings.Builder
 	Args         []any
 	LastCond     string
@@ -91,6 +92,16 @@ func (q *Query[T]) Select(columns ...string) *Query[T] {
 	return q
 }
 
+func (q *Query[T]) OrderByDesc(columns ...string) *Query[T] {
+	q.buildOrder(constants.Desc, columns...)
+	return q
+}
+
+func (q *Query[T]) OrderByAsc(columns ...string) *Query[T] {
+	q.buildOrder(constants.Asc, columns...)
+	return q
+}
+
 func (q *Query[T]) addCond(column string, val any, condType string) {
 	if q.LastCond != constants.And && q.LastCond != constants.Or && q.QueryBuilder.Len() > 0 {
 		q.QueryBuilder.WriteString(constants.And)
@@ -101,4 +112,15 @@ func (q *Query[T]) addCond(column string, val any, condType string) {
 	q.QueryBuilder.WriteString(" ")
 	q.LastCond = ""
 	q.Args = append(q.Args, val)
+}
+
+func (q *Query[T]) buildOrder(orderType string, columns ...string) {
+	for _, v := range columns {
+		if q.OrderBuilder.Len() > 0 {
+			q.OrderBuilder.WriteString(constants.COMMA)
+		}
+		q.OrderBuilder.WriteString(v)
+		q.OrderBuilder.WriteString(" ")
+		q.OrderBuilder.WriteString(orderType)
+	}
 }

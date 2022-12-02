@@ -12,4 +12,6 @@ const (
 	Ge   = ">="
 	Lt   = "<"
 	Le   = "<="
+	Desc = "DESC"
+	Asc  = "ASC"
 )

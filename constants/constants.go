@@ -1,1 +1,5 @@
 package constants
+
+const (
+	COMMA = ","
+)

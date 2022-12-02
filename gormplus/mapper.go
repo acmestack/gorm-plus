@@ -81,7 +81,7 @@ func SelectOne[T any](q *Query[T]) (*gorm.DB, T) {
 
 func SelectList[T any](q *Query[T]) (*gorm.DB, []T) {
 	var results []T
-	resultDb := GormDb.Select(q.Columns).Where(q.QueryBuilder.String(), q.Args...).Find(&results)
+	resultDb := GormDb.Order(q.OrderBuilder.String()).Select(q.Columns).Where(q.QueryBuilder.String(), q.Args...).Find(&results)
 	return resultDb, results
 }
 

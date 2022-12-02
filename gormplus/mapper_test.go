@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"testing"
 )
 
 func init() {
 	dsn := "root:123456@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
-	GormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	GormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -23,7 +26,7 @@ type Test1 struct {
 }
 
 func TestSave(t *testing.T) {
-	test1 := Test1{Code: "D455", Price: 100}
+	test1 := Test1{Code: "D455", Price: 200}
 	resultDb := Insert(&test1)
 	fmt.Println(resultDb)
 	fmt.Println(test1)
@@ -113,7 +116,7 @@ func TestSelectOne(t *testing.T) {
 
 func TestSelectList(t *testing.T) {
 	q := Query[Test1]{}
-	q.Eq("price", 200).Select("code", "price")
+	q.OrderByDesc("price").OrderByAsc("code")
 	db, result := SelectList(&q)
 	fmt.Println(db.RowsAffected)
 	fmt.Println(result)

@@ -1,5 +1,7 @@
 # gorm-plus
-这是一个gorm的增强版，类似mybatis-plus语法
+这是一个gorm的增强版，类似mybatis-plus语法。
+
+This is an plus version of gorm, which is similar to the mybatis-plus syntax.
 
 下载使用：
 

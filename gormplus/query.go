@@ -16,6 +16,7 @@ type Query[T any] struct {
 	HavingBuilder   strings.Builder
 	HavingArgs      []any
 	LastCond        string
+	UpdateMap       map[string]any
 }
 
 func (q *Query[T]) Eq(column string, val any) *Query[T] {
@@ -159,6 +160,14 @@ func (q *Query[T]) Group(columns ...string) *Query[T] {
 func (q *Query[T]) Having(having string, args ...any) *Query[T] {
 	q.HavingBuilder.WriteString(having)
 	q.HavingArgs = append(q.HavingArgs, args)
+	return q
+}
+
+func (q *Query[T]) Set(column string, val any) *Query[T] {
+	if q.UpdateMap == nil {
+		q.UpdateMap = make(map[string]any)
+	}
+	q.UpdateMap[column] = val
 	return q
 }
 

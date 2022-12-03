@@ -21,33 +21,17 @@ func Insert[T any](entity *T) *gorm.DB {
 	return resultDb
 }
 
-func InsertMigrate[T any](entity *T) (*gorm.DB, error) {
-	if err := gormDb.AutoMigrate(new(T)); err != nil {
-		return nil, err
-	}
-	resultDb := gormDb.Create(&entity)
-	return resultDb, nil
-}
-
-func InsertBatch[T any](entities ...*T) *gorm.DB {
-	resultDb := gormDb.CreateInBatches(&entities, defaultBatchSize)
+func InsertBatch[T any](entities any) *gorm.DB {
+	resultDb := gormDb.CreateInBatches(entities, defaultBatchSize)
 	return resultDb
 }
 
-func InsertBatchSize[T any](batchSize int, entities ...*T) *gorm.DB {
+func InsertBatchSize[T any](entities any, batchSize int) *gorm.DB {
 	if batchSize <= 0 {
 		batchSize = defaultBatchSize
 	}
-	resultDb := gormDb.CreateInBatches(&entities, batchSize)
+	resultDb := gormDb.CreateInBatches(entities, batchSize)
 	return resultDb
-}
-
-func InsertBatchMigrate[T any](entities ...*T) (*gorm.DB, error) {
-	if err := gormDb.AutoMigrate(new(T)); err != nil {
-		return nil, err
-	}
-	resultDb := gormDb.Create(&entities)
-	return resultDb, nil
 }
 
 func DeleteById[T any](id any) *gorm.DB {
@@ -67,15 +51,13 @@ func Delete[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-func UpdateById[T any](id any, entity *T) *gorm.DB {
-	var e T
-	gormDb.First(&e, id)
-	resultDb := gormDb.Model(&e).Updates(entity)
+func UpdateById[T any](entity *T) *gorm.DB {
+	resultDb := gormDb.Model(&entity).Updates(&entity)
 	return resultDb
 }
 
-func Update[T any](q *Query[T], entity *T) *gorm.DB {
-	resultDb := gormDb.Where(q.QueryBuilder.String(), q.QueryArgs...).Updates(entity)
+func Update[T any](q *Query[T]) *gorm.DB {
+	resultDb := gormDb.Model(new(T)).Where(q.QueryBuilder.String(), q.QueryArgs...).Updates(&q.UpdateMap)
 	return resultDb
 }
 

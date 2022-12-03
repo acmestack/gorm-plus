@@ -33,22 +33,16 @@ func TestInsert(t *testing.T) {
 	fmt.Println(test1)
 }
 
-func TestInsertMigrate(t *testing.T) {
-	test1 := Test1{Code: "D455", Price: 100}
-	resultDb, err := InsertMigrate(&test1)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(resultDb)
-	fmt.Println(test1)
-}
-
 func TestInsertBatch(t *testing.T) {
-	test1 := Test1{Code: "D466", Price: 100}
-	test2 := Test1{Code: "D466", Price: 100}
-
-	resultDb := InsertBatch(&test1, &test2)
-	fmt.Println(resultDb)
+	test1 := Test1{Code: "D477", Price: 100}
+	test2 := Test1{Code: "D477", Price: 100}
+	test3 := Test1{Code: "D477", Price: 100}
+	var ts []*Test1
+	ts = append(ts, &test1)
+	ts = append(ts, &test2)
+	ts = append(ts, &test3)
+	resultDb := InsertBatch[Test1](&ts)
+	fmt.Println(resultDb.RowsAffected)
 	fmt.Println(test1)
 	fmt.Println(test2)
 }
@@ -57,20 +51,12 @@ func TestInsertBatchSize(t *testing.T) {
 	test1 := Test1{Code: "D466", Price: 100}
 	test2 := Test1{Code: "D466", Price: 100}
 	test3 := Test1{Code: "D466", Price: 100}
+	var ts []Test1
+	ts = append(ts, test1)
+	ts = append(ts, test2)
+	ts = append(ts, test3)
 
-	resultDb := InsertBatchSize(2, &test1, &test2, &test3)
-	fmt.Println(resultDb)
-	fmt.Println(test1)
-	fmt.Println(test2)
-}
-
-func TestInsertBatchMigrate(t *testing.T) {
-	test1 := Test1{Code: "D477", Price: 100}
-	test2 := Test1{Code: "D477", Price: 100}
-	resultDb, err := InsertBatchMigrate(&test1, &test2)
-	if err != nil {
-		fmt.Println(err)
-	}
+	resultDb := InsertBatchSize[Test1](ts, 2)
 	fmt.Println(resultDb)
 	fmt.Println(test1)
 	fmt.Println(test2)
@@ -95,16 +81,14 @@ func TestDelete(t *testing.T) {
 
 func TestUpdateById(t *testing.T) {
 	test1 := Test1{Code: "777"}
-	resultDb := UpdateById(6, &test1)
+	resultDb := UpdateById(&test1)
 	fmt.Println(resultDb)
 }
 
 func TestUpdate(t *testing.T) {
 	q := Query[Test1]{}
-	q.Eq("code", "D42").Eq("price", 100)
-	test1 := Test1{Code: "888"}
-	// todo 需要给用户选择字段更新
-	resultDb := Update(&q, &test1)
+	q.Eq("code", "D42").Set("price", 100)
+	resultDb := Update(&q)
 	fmt.Println(resultDb)
 }
 

@@ -12,7 +12,7 @@ import (
 func init() {
 	dsn := "root:123456@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
-	GormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+	gormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
@@ -26,14 +26,14 @@ type Test1 struct {
 	Price uint
 }
 
-func TestSave(t *testing.T) {
+func TestInsert(t *testing.T) {
 	test1 := Test1{Code: "D455", Price: 200}
 	resultDb := Insert(&test1)
 	fmt.Println(resultDb)
 	fmt.Println(test1)
 }
 
-func TestSaveMigrate(t *testing.T) {
+func TestInsertMigrate(t *testing.T) {
 	test1 := Test1{Code: "D455", Price: 100}
 	resultDb, err := InsertMigrate(&test1)
 	if err != nil {
@@ -43,16 +43,28 @@ func TestSaveMigrate(t *testing.T) {
 	fmt.Println(test1)
 }
 
-func TestBatchSave(t *testing.T) {
+func TestInsertBatch(t *testing.T) {
 	test1 := Test1{Code: "D466", Price: 100}
 	test2 := Test1{Code: "D466", Price: 100}
+
 	resultDb := InsertBatch(&test1, &test2)
 	fmt.Println(resultDb)
 	fmt.Println(test1)
 	fmt.Println(test2)
 }
 
-func TestSaveBatchMigrate(t *testing.T) {
+func TestInsertBatchSize(t *testing.T) {
+	test1 := Test1{Code: "D466", Price: 100}
+	test2 := Test1{Code: "D466", Price: 100}
+	test3 := Test1{Code: "D466", Price: 100}
+
+	resultDb := InsertBatchSize(2, &test1, &test2, &test3)
+	fmt.Println(resultDb)
+	fmt.Println(test1)
+	fmt.Println(test2)
+}
+
+func TestInsertBatchMigrate(t *testing.T) {
 	test1 := Test1{Code: "D477", Price: 100}
 	test2 := Test1{Code: "D477", Price: 100}
 	resultDb, err := InsertBatchMigrate(&test1, &test2)
@@ -91,6 +103,7 @@ func TestUpdate(t *testing.T) {
 	q := Query[Test1]{}
 	q.Eq("code", "D42").Eq("price", 100)
 	test1 := Test1{Code: "888"}
+	// todo 需要给用户选择字段更新
 	resultDb := Update(&q, &test1)
 	fmt.Println(resultDb)
 }
@@ -116,9 +129,17 @@ func TestSelectOne(t *testing.T) {
 }
 
 func TestSelectList(t *testing.T) {
-	q := Query[Test1]{}
-	q.In("code", "D455")
-	db, result := SelectList(&q)
+	db, result := SelectList[Test1](nil)
+	fmt.Println(db.RowsAffected)
+	for _, v := range result {
+		marshal, _ := json.Marshal(v)
+		fmt.Println(string(marshal))
+	}
+}
+
+func TestSelectPage(t *testing.T) {
+	page := Page{Page: 1, PageSize: 10}
+	db, result := SelectPage[Test1](page, nil)
 	fmt.Println(db.RowsAffected)
 	for _, v := range result {
 		marshal, _ := json.Marshal(v)

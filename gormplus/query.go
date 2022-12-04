@@ -19,6 +19,10 @@ type Query[T any] struct {
 	UpdateMap       map[string]any
 }
 
+func NewQuery[T any]() *Query[T] {
+	return &Query[T]{}
+}
+
 func (q *Query[T]) Eq(column string, val any) *Query[T] {
 	q.addCond(column, val, constants.Eq)
 	return q

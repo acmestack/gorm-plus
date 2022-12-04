@@ -1,7 +1,6 @@
 package gormplus
 
 import (
-	"encoding/json"
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -93,13 +92,16 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestSelectById(t *testing.T) {
-	db, result := SelectById[Test1](1)
-	fmt.Println(db)
-	fmt.Println(result)
+	test1, resultDb := SelectById[Test1](1)
+	fmt.Println(resultDb)
+	fmt.Println(test1)
 }
 
 func TestSelectByIds(t *testing.T) {
-	db, result := SelectByIds[Test1](1, 2)
+	var ids []int
+	ids = append(ids, 1)
+	ids = append(ids, 2)
+	result, db := SelectByIds[Test1](ids)
 	fmt.Println(db)
 	fmt.Println(result)
 }
@@ -113,28 +115,28 @@ func TestSelectOne(t *testing.T) {
 }
 
 func TestSelectList(t *testing.T) {
-	db, result := SelectList[Test1](nil)
-	fmt.Println(db.RowsAffected)
-	for _, v := range result {
-		marshal, _ := json.Marshal(v)
-		fmt.Println(string(marshal))
-	}
+	/*	db, result := SelectList[Test1](nil)
+		fmt.Println(db.RowsAffected)
+		for _, v := range result {
+			marshal, _ := json.Marshal(v)
+			fmt.Println(string(marshal))
+		}*/
 }
 
 func TestSelectPage(t *testing.T) {
-	page := Page{Page: 1, PageSize: 10}
-	db, result := SelectPage[Test1](page, nil)
-	fmt.Println(db.RowsAffected)
-	for _, v := range result {
-		marshal, _ := json.Marshal(v)
-		fmt.Println(string(marshal))
-	}
+	/*	page := &Page{Current: 1, Size: 10}
+		db, result := SelectPage[Test1](page, nil)
+		fmt.Println(db.RowsAffected)
+		for _, v := range result {
+			marshal, _ := json.Marshal(v)
+			fmt.Println(string(marshal))
+		}*/
 }
 
 func TestSelectCount(t *testing.T) {
 	q := Query[Test1]{}
 	q.Eq("price", 100)
-	db, count := SelectCount(&q)
+	count, db := SelectCount(&q)
 	fmt.Println(db)
 	fmt.Println(count)
 }

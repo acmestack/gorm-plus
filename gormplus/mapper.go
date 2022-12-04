@@ -11,9 +11,15 @@ func Init(db *gorm.DB) {
 	gormDb = db
 }
 
-type Page struct {
-	Page     int
-	PageSize int
+type Page[T any] struct {
+	Current int
+	Size    int
+	Total   int64
+	Records []*T
+}
+
+func NewPage[T any](current, size int) *Page[T] {
+	return &Page[T]{Current: current, Size: size}
 }
 
 func Insert[T any](entity *T) *gorm.DB {
@@ -61,47 +67,81 @@ func Update[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-func SelectById[T any](id any) (*gorm.DB, T) {
-	var entity T
-	resultDb := gormDb.Limit(1).Find(&entity, id)
-	return resultDb, entity
+func SelectById[T any](id any) (*T, *gorm.DB) {
+	var entity *T
+	resultDb := gormDb.Take(&entity, id)
+	if resultDb.RowsAffected == 0 {
+		return nil, resultDb
+	}
+	return entity, resultDb
 }
 
-func SelectByIds[T any](ids ...any) (*gorm.DB, []T) {
-	var results []T
+func SelectByIds[T any](ids any) ([]*T, *gorm.DB) {
+	var results []*T
 	resultDb := gormDb.Find(&results, ids)
-	return resultDb, results
+	return results, resultDb
 }
 
-func SelectOne[T any](q *Query[T]) (*gorm.DB, T) {
-	var entity T
-	resultDb := gormDb.Select(q.SelectColumns).Where(q.QueryBuilder.String(), q.QueryArgs...).Limit(1).Find(&entity)
-	return resultDb, entity
-}
-
-func SelectList[T any](q *Query[T]) (*gorm.DB, []T) {
+func SelectOne[T any](q *Query[T]) (*T, *gorm.DB) {
+	var entity *T
 	resultDb := buildCondition(q)
-	var results []T
+	resultDb.Take(&entity)
+	if resultDb.RowsAffected == 0 {
+		return nil, resultDb
+	}
+	return entity, resultDb
+}
+
+func SelectList[T any](q *Query[T]) ([]*T, *gorm.DB) {
+	resultDb := buildCondition(q)
+	var results []*T
 	resultDb.Find(&results)
-	return resultDb, results
+	return results, resultDb
 }
 
-func SelectPage[T any](page Page, q *Query[T]) (*gorm.DB, []T) {
+func SelectModelList[T any, R any](q *Query[T]) ([]*R, *gorm.DB) {
 	resultDb := buildCondition(q)
-	var results []T
+	var results []*R
+	resultDb.Scan(&results)
+	return results, resultDb
+}
+
+func SelectPage[T any](page *Page[T], q *Query[T]) (*Page[T], *gorm.DB) {
+	total, countDb := SelectCount[T](q)
+	if countDb.Error != nil {
+		return page, countDb
+	}
+	page.Total = total
+	resultDb := buildCondition(q)
+	var results []*T
 	resultDb.Scopes(paginate(page)).Find(&results)
-	return resultDb, results
+	page.Records = results
+	return page, resultDb
 }
 
-func SelectCount[T any](q *Query[T]) (*gorm.DB, int64) {
+func SelectModelPage[T any, R any](page *Page[R], q *Query[T]) (*Page[R], *gorm.DB) {
+	total, countDb := SelectCount[T](q)
+	if countDb.Error != nil {
+		return page, countDb
+	}
+	page.Total = total
+	resultDb := buildCondition(q)
+	var results []*R
+	resultDb.Scopes(paginate(page)).Scan(&results)
+	page.Records = results
+	return page, resultDb
+}
+
+func SelectCount[T any](q *Query[T]) (int64, *gorm.DB) {
 	var count int64
-	resultDb := gormDb.Model(new(T)).Where(q.QueryBuilder.String(), q.QueryArgs...).Count(&count)
-	return resultDb, count
+	resultDb := buildCondition(q)
+	resultDb.Count(&count)
+	return count, resultDb
 }
 
-func paginate(p Page) func(db *gorm.DB) *gorm.DB {
-	page := p.Page
-	pageSize := p.PageSize
+func paginate[T any](p *Page[T]) func(db *gorm.DB) *gorm.DB {
+	page := p.Current
+	pageSize := p.Size
 	return func(db *gorm.DB) *gorm.DB {
 		if page <= 0 {
 			page = 1

@@ -16,10 +16,10 @@ func TestUpdateById(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	q := gormplus.Query[User]{}
+	q := gormplus.NewQuery[User]()
 	q.Eq(UserColumn.Username, "zhangsan").Set(UserColumn.Dept, "相关部门123123").
 		Set(UserColumn.Phone, 12312)
-	result := gormplus.Update(&q)
+	result := gormplus.Update(q)
 	if result.Error != nil {
 		fmt.Println(result.Error)
 	}

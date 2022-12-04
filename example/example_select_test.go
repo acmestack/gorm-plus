@@ -36,7 +36,7 @@ func TestSelectByIds(t *testing.T) {
 }
 
 func TestSelectOne1(t *testing.T) {
-	q := &gormplus.Query[User]{}
+	q := gormplus.NewQuery[User]()
 	q.Eq(UserColumn.Username, "zhangsan1")
 	user, resultDb := gormplus.SelectOne(q)
 
@@ -53,7 +53,7 @@ func TestSelectOne1(t *testing.T) {
 }
 
 func TestSelectOne2(t *testing.T) {
-	q := &gormplus.Query[User]{}
+	q := gormplus.NewQuery[User]()
 	q.Eq(UserColumn.Username, "zhangsan").
 		Select(UserColumn.Username, UserColumn.Password)
 	user, resultDb := gormplus.SelectOne(q)
@@ -68,16 +68,6 @@ func TestSelectOne2(t *testing.T) {
 	log.Println("RowsAffected:", resultDb.RowsAffected)
 	marshal, _ := json.Marshal(user)
 	log.Println(string(marshal))
-}
-
-func f(q *gormplus.Query[User]) *gormplus.Query[User] {
-	q.Eq(UserColumn.Address, "上海").Or().Eq(UserColumn.Address, "北京")
-	return q
-}
-func aa(q1 *gormplus.Query[User]) func(q *gormplus.Query[User]) *gormplus.Query[User] {
-	return func(q *gormplus.Query[User]) *gormplus.Query[User] {
-		return q1
-	}
 }
 
 func TestSelectList(t *testing.T) {
@@ -97,6 +87,7 @@ func TestSelectBracketList(t *testing.T) {
 	q := gormplus.NewQuery[User]()
 	bracketQuery := gormplus.NewQuery[User]()
 	bracketQuery.Eq(UserColumn.Address, "上海").Or().Eq(UserColumn.Address, "北京")
+
 	q.Eq(UserColumn.Username, "zhangsan").AndBracket(bracketQuery)
 	users, resultDb := gormplus.SelectList(q)
 	if resultDb.Error != nil {
@@ -113,7 +104,7 @@ func TestSelectTableList(t *testing.T) {
 		Dept  string
 		Count string
 	}
-	q := &gormplus.Query[User]{}
+	q := gormplus.NewQuery[User]()
 	q.Group(UserColumn.Dept).Select(UserColumn.Dept, "count(*) as count")
 	users, resultDb := gormplus.SelectModelList[User, deptCount](q)
 	if resultDb.Error != nil {
@@ -126,9 +117,9 @@ func TestSelectTableList(t *testing.T) {
 }
 
 func TestSelectPage(t *testing.T) {
-	q := &gormplus.Query[User]{}
+	q := gormplus.NewQuery[User]()
 	q.Eq(UserColumn.Age, 18)
-	page := &gormplus.Page[User]{Current: 1, Size: 10}
+	page := gormplus.NewPage[User](1, 10)
 	pageResult, resultDb := gormplus.SelectPage(page, q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)

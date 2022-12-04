@@ -1,5 +1,7 @@
 package constants
 
 const (
-	COMMA = ","
+	Comma        = ","
+	LeftBracket  = "("
+	RightBracket = ")"
 )

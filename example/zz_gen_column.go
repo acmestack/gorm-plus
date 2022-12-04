@@ -4,6 +4,7 @@ var UserColumn = struct {
 	ID        string
 	Username  string
 	Password  string
+	Address   string
 	Age       string
 	Phone     string
 	Score     string
@@ -14,6 +15,7 @@ var UserColumn = struct {
 	ID:        "id",
 	Username:  "username",
 	Password:  "password",
+	Address:   "address",
 	Age:       "age",
 	Phone:     "phone",
 	Score:     "score",

@@ -70,9 +70,34 @@ func TestSelectOne2(t *testing.T) {
 	log.Println(string(marshal))
 }
 
-func TestSelectList1(t *testing.T) {
-	q := &gormplus.Query[User]{}
+func f(q *gormplus.Query[User]) *gormplus.Query[User] {
+	q.Eq(UserColumn.Address, "上海").Or().Eq(UserColumn.Address, "北京")
+	return q
+}
+func aa(q1 *gormplus.Query[User]) func(q *gormplus.Query[User]) *gormplus.Query[User] {
+	return func(q *gormplus.Query[User]) *gormplus.Query[User] {
+		return q1
+	}
+}
+
+func TestSelectList(t *testing.T) {
+	q := gormplus.NewQuery[User]()
 	q.Eq(UserColumn.Username, "zhangsan")
+	users, resultDb := gormplus.SelectList(q)
+	if resultDb.Error != nil {
+		log.Fatalln("error:", resultDb.Error)
+	}
+	for _, u := range users {
+		marshal, _ := json.Marshal(u)
+		log.Println(string(marshal))
+	}
+}
+
+func TestSelectBracketList(t *testing.T) {
+	q := gormplus.NewQuery[User]()
+	bracketQuery := gormplus.NewQuery[User]()
+	bracketQuery.Eq(UserColumn.Address, "上海").Or().Eq(UserColumn.Address, "北京")
+	q.Eq(UserColumn.Username, "zhangsan").AndBracket(bracketQuery)
 	users, resultDb := gormplus.SelectList(q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)

@@ -166,6 +166,17 @@ func buildCondition[T any](q *Query[T]) *gorm.DB {
 		}
 
 		if q.QueryBuilder.Len() > 0 {
+
+			if q.AndBracketBuilder.Len() > 0 {
+				q.QueryArgs = append(q.QueryArgs, q.AndBracketArgs...)
+				q.QueryBuilder.WriteString(q.AndBracketBuilder.String())
+			}
+
+			if q.OrBracketBuilder.Len() > 0 {
+				q.QueryArgs = append(q.QueryArgs, q.OrBracketArgs...)
+				q.QueryBuilder.WriteString(q.OrBracketBuilder.String())
+			}
+
 			resultDb.Where(q.QueryBuilder.String(), q.QueryArgs...)
 		}
 

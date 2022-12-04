@@ -7,16 +7,20 @@ import (
 )
 
 type Query[T any] struct {
-	SelectColumns   []string
-	DistinctColumns []string
-	QueryBuilder    strings.Builder
-	QueryArgs       []any
-	OrderBuilder    strings.Builder
-	GroupBuilder    strings.Builder
-	HavingBuilder   strings.Builder
-	HavingArgs      []any
-	LastCond        string
-	UpdateMap       map[string]any
+	SelectColumns     []string
+	DistinctColumns   []string
+	QueryBuilder      strings.Builder
+	OrBracketBuilder  strings.Builder
+	OrBracketArgs     []any
+	AndBracketBuilder strings.Builder
+	AndBracketArgs    []any
+	QueryArgs         []any
+	OrderBuilder      strings.Builder
+	GroupBuilder      strings.Builder
+	HavingBuilder     strings.Builder
+	HavingArgs        []any
+	LastCond          string
+	UpdateMap         map[string]any
 }
 
 func NewQuery[T any]() *Query[T] {
@@ -129,10 +133,22 @@ func (q *Query[T]) And() *Query[T] {
 	return q
 }
 
+func (q *Query[T]) AndBracket(bracketQuery *Query[T]) *Query[T] {
+	q.AndBracketBuilder.WriteString(constants.And + " " + constants.LeftBracket + bracketQuery.QueryBuilder.String() + constants.RightBracket + " ")
+	q.AndBracketArgs = append(q.AndBracketArgs, bracketQuery.QueryArgs...)
+	return q
+}
+
 func (q *Query[T]) Or() *Query[T] {
 	q.QueryBuilder.WriteString(constants.Or)
 	q.QueryBuilder.WriteString(" ")
 	q.LastCond = constants.Or
+	return q
+}
+
+func (q *Query[T]) OrBracket(bracketQuery *Query[T]) *Query[T] {
+	q.OrBracketBuilder.WriteString(constants.Or + " " + constants.LeftBracket + bracketQuery.QueryBuilder.String() + constants.RightBracket + " ")
+	q.OrBracketArgs = append(q.OrBracketArgs, bracketQuery.QueryArgs...)
 	return q
 }
 
@@ -154,7 +170,7 @@ func (q *Query[T]) OrderByAsc(columns ...string) *Query[T] {
 func (q *Query[T]) Group(columns ...string) *Query[T] {
 	for _, v := range columns {
 		if q.GroupBuilder.Len() > 0 {
-			q.GroupBuilder.WriteString(constants.COMMA)
+			q.GroupBuilder.WriteString(constants.Comma)
 		}
 		q.GroupBuilder.WriteString(v)
 	}
@@ -194,7 +210,7 @@ func (q *Query[T]) buildAndIfNeed() {
 func (q *Query[T]) buildOrder(orderType string, columns ...string) {
 	for _, v := range columns {
 		if q.OrderBuilder.Len() > 0 {
-			q.OrderBuilder.WriteString(constants.COMMA)
+			q.OrderBuilder.WriteString(constants.Comma)
 		}
 		q.OrderBuilder.WriteString(v)
 		q.OrderBuilder.WriteString(" ")

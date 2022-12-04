@@ -6,6 +6,7 @@ type User struct {
 	ID        int64  `gorm:"primaryKey"`
 	Username  string `gorm:"column:username"`
 	Password  string
+	Address   string
 	Age       int
 	Phone     string
 	Score     int

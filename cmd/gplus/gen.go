@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/format"
 	"go/types"
+	"gorm.io/gorm/schema"
 	"io"
 
 	"github.com/dave/jennifer/jen"
@@ -87,9 +88,16 @@ func buildGenFile(root *loader.Package, allStructInfos []StructInfo) *jen.File {
 		}
 		genFile.Id("}").Id("{")
 		for i, field := range s.Fields {
-			tagName := s.FieldTags[i]
-			filedName := fmt.Sprintf("\"%s\"", tagName)
-			genFile.Id(field).Op(":").Id(filedName).Id(",")
+			tag := s.FieldTags[i]
+			tagSetting := schema.ParseTagSetting(tag, ";")
+			columnName := tagSetting["COLUMN"]
+			if columnName == "" {
+				// Use NamingStrategy by default for now
+				namingStrategy := schema.NamingStrategy{}
+				columnName = namingStrategy.ColumnName("", field)
+			}
+			columnName = fmt.Sprintf("\"%s\"", columnName)
+			genFile.Id(field).Op(":").Id(columnName).Id(",")
 		}
 		genFile.Id("}")
 	}

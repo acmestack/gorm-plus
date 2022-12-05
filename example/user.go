@@ -2,9 +2,13 @@ package example
 
 import "time"
 
+//  +gplus:column=true
+
 type User struct {
-	ID        int64  `gorm:"primaryKey"`
-	Username  string `gorm:"column:username"`
+	//ID        int64  `gorm:"primaryKey"`
+	//Username  string `gorm:"column:username"`
+	ID        int64  `id`
+	Username  string `username`
 	Password  string
 	Address   string
 	Age       int

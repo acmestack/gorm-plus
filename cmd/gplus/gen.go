@@ -3,16 +3,16 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/dave/jennifer/jen"
 	"go/ast"
 	"go/format"
 	"go/types"
 	"gorm.io/gorm/schema"
 	"io"
-
-	"github.com/dave/jennifer/jen"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
+	"strings"
 )
 
 type StructInfo struct {
@@ -89,7 +89,10 @@ func buildGenFile(root *loader.Package, allStructInfos []StructInfo) *jen.File {
 		genFile.Id("}").Id("{")
 		for i, field := range s.Fields {
 			tag := s.FieldTags[i]
-			tagSetting := schema.ParseTagSetting(tag, ";")
+			// todo Need to optimize
+			newTag := strings.ReplaceAll(tag, "gorm:", "")
+			newTag = strings.ReplaceAll(newTag, "\"", "")
+			tagSetting := schema.ParseTagSetting(newTag, ";")
 			columnName := tagSetting["COLUMN"]
 			if columnName == "" {
 				// Use NamingStrategy by default for now

@@ -23,3 +23,20 @@ var UserColumn = struct {
 	CreatedAt: "created_at",
 	UpdatedAt: "updated_at",
 }
+var ClazzColumn = struct {
+	ID          string
+	Name        string
+	Count       string
+	TeacherName string
+	HouseNumber string
+	CreatedAt   string
+	UpdatedAt   string
+}{
+	ID:          "id",
+	Name:        "name",
+	Count:       "count",
+	TeacherName: "teacher_name",
+	HouseNumber: "house",
+	CreatedAt:   "created_at",
+	UpdatedAt:   "updated_at",
+}

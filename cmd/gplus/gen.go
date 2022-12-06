@@ -89,7 +89,6 @@ func buildGenFile(root *loader.Package, allStructInfos []StructInfo) *jen.File {
 		genFile.Id("}").Id("{")
 		for i, field := range s.Fields {
 			tag := s.FieldTags[i]
-			// todo Need to optimize
 			newTag := strings.ReplaceAll(tag, "gorm:", "")
 			newTag = strings.ReplaceAll(newTag, "\"", "")
 			tagSetting := schema.ParseTagSetting(newTag, ";")

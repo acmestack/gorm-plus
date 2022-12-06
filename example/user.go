@@ -1,6 +1,8 @@
 package example
 
-import "time"
+import (
+	"time"
+)
 
 // +gplus:column=true
 
@@ -19,16 +21,4 @@ type User struct {
 
 func (User) TableName() string {
 	return "Users"
-}
-
-// +gplus:column=true
-
-type Clazz struct {
-	ID          int64 `gorm:"primaryKey"`
-	Name        string
-	Count       string
-	TeacherName string
-	HouseNumber int `gorm:"column:house"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
 }

@@ -45,7 +45,7 @@ func DeleteById[T any](id any) *gorm.DB {
 	return resultDb
 }
 
-func DeleteByIds[T any](ids ...any) *gorm.DB {
+func DeleteByIds[T any](ids any) *gorm.DB {
 	var entities []T
 	resultDb := gormDb.Delete(&entities, ids)
 	return resultDb

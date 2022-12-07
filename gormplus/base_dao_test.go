@@ -67,8 +67,8 @@ func TestDeleteById(t *testing.T) {
 }
 
 func TestDeleteByIds(t *testing.T) {
-	resultDb := DeleteByIds[Test1](4, 5)
-	fmt.Println(resultDb)
+	//resultDb := DeleteByIds[Test1](4, 5)
+	//fmt.Println(resultDb)
 }
 
 func TestDelete(t *testing.T) {

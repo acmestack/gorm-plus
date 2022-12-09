@@ -17,7 +17,7 @@
 
 package common
 
-import "github.com/gorm-plus/gorm-plus/gplus"
+import "github.com/acmestack/gorm-plus/gplus"
 
 var userDao = NewUserDao[User]()
 

@@ -20,7 +20,7 @@ package base
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gorm-plus/gorm-plus/gplus"
+	"github.com/acmestack/gorm-plus/gplus"
 	"gorm.io/gorm"
 	"log"
 	"testing"

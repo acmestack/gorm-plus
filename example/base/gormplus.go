@@ -18,7 +18,7 @@
 package base
 
 import (
-	"github.com/gorm-plus/gorm-plus/gplus"
+	"github.com/acmestack/gorm-plus/gplus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

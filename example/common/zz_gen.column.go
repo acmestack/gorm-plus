@@ -1,4 +1,4 @@
-package example
+package common
 
 var UserColumn = struct {
 	ID        string

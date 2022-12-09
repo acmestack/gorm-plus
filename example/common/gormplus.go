@@ -1,7 +1,7 @@
-package example
+package common
 
 import (
-	"github.com/gorm-plus/gorm-plus/gormplus"
+	"github.com/gorm-plus/gorm-plus/gplus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -19,5 +19,5 @@ func init() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	gormplus.Init(GormDb)
+	gplus.Init(GormDb)
 }

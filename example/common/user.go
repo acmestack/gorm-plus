@@ -1,4 +1,4 @@
-package example
+package common
 
 import (
 	"time"
@@ -7,7 +7,7 @@ import (
 // +gplus:column=true
 
 type User struct {
-	ID        int64  `gorm:"primaryKey"`
+	ID        int64
 	Username  string `gorm:"column:username"`
 	Password  string
 	Address   string

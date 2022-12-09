@@ -1,16 +1,16 @@
-package example
+package base
 
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gorm-plus/gorm-plus/gormplus"
+	"github.com/gorm-plus/gorm-plus/gplus"
 	"gorm.io/gorm"
 	"log"
 	"testing"
 )
 
 func TestSelectById(t *testing.T) {
-	user, resultDb := gormplus.SelectById[User](1)
+	user, resultDb := gplus.SelectById[User](1)
 	if resultDb.Error != nil {
 		if errors.Is(resultDb.Error, gorm.ErrRecordNotFound) {
 			log.Fatalln("SelectById Data not found:", resultDb.Error)
@@ -26,7 +26,7 @@ func TestSelectByIds(t *testing.T) {
 	var ids []int
 	ids = append(ids, 1)
 	ids = append(ids, 2)
-	users, resultDb := gormplus.SelectByIds[User](ids)
+	users, resultDb := gplus.SelectByIds[User](ids)
 	if resultDb.Error != nil {
 		log.Fatalln(resultDb.Error)
 	}
@@ -36,9 +36,9 @@ func TestSelectByIds(t *testing.T) {
 }
 
 func TestSelectOne1(t *testing.T) {
-	q := gormplus.NewQuery[User]()
+	q := gplus.NewQuery[User]()
 	q.Eq(UserColumn.Username, "zhangsan1")
-	user, resultDb := gormplus.SelectOne(q)
+	user, resultDb := gplus.SelectOne(q)
 
 	if resultDb.Error != nil {
 		if errors.Is(resultDb.Error, gorm.ErrRecordNotFound) {
@@ -53,10 +53,10 @@ func TestSelectOne1(t *testing.T) {
 }
 
 func TestSelectOne2(t *testing.T) {
-	q := gormplus.NewQuery[User]()
+	q := gplus.NewQuery[User]()
 	q.Eq(UserColumn.Username, "zhangsan").
 		Select(UserColumn.Username, UserColumn.Password)
-	user, resultDb := gormplus.SelectOne(q)
+	user, resultDb := gplus.SelectOne(q)
 
 	if resultDb.Error != nil {
 		if errors.Is(resultDb.Error, gorm.ErrRecordNotFound) {
@@ -71,9 +71,9 @@ func TestSelectOne2(t *testing.T) {
 }
 
 func TestSelectList(t *testing.T) {
-	q := gormplus.NewQuery[User]()
+	q := gplus.NewQuery[User]()
 	q.Eq(UserColumn.Username, "zhangsan")
-	users, resultDb := gormplus.SelectList(q)
+	users, resultDb := gplus.SelectList(q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)
 	}
@@ -84,12 +84,12 @@ func TestSelectList(t *testing.T) {
 }
 
 func TestSelectBracketList(t *testing.T) {
-	q := gormplus.NewQuery[User]()
-	bracketQuery := gormplus.NewQuery[User]()
+	q := gplus.NewQuery[User]()
+	bracketQuery := gplus.NewQuery[User]()
 	bracketQuery.Eq(UserColumn.Address, "上海").Or().Eq(UserColumn.Address, "北京")
 
 	q.Eq(UserColumn.Username, "zhangsan").AndBracket(bracketQuery)
-	users, resultDb := gormplus.SelectList(q)
+	users, resultDb := gplus.SelectList(q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)
 	}
@@ -104,9 +104,9 @@ func TestSelectTableList(t *testing.T) {
 		Dept  string
 		Count string
 	}
-	q := gormplus.NewQuery[User]()
+	q := gplus.NewQuery[User]()
 	q.Group(UserColumn.Dept).Select(UserColumn.Dept, "count(*) as count")
-	users, resultDb := gormplus.SelectModelList[User, deptCount](q)
+	users, resultDb := gplus.SelectListModel[User, deptCount](q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)
 	}
@@ -117,10 +117,10 @@ func TestSelectTableList(t *testing.T) {
 }
 
 func TestSelectPage(t *testing.T) {
-	q := gormplus.NewQuery[User]()
+	q := gplus.NewQuery[User]()
 	q.Eq(UserColumn.Age, 18)
-	page := gormplus.NewPage[User](1, 10)
-	pageResult, resultDb := gormplus.SelectPage(page, q)
+	page := gplus.NewPage[User](1, 10)
+	pageResult, resultDb := gplus.SelectPage(page, q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)
 	}
@@ -136,10 +136,10 @@ func TestSelectTablePage(t *testing.T) {
 		Dept  string
 		Count string
 	}
-	q := gormplus.NewQuery[User]()
+	q := gplus.NewQuery[User]()
 	q.Group(UserColumn.Dept).Select(UserColumn.Dept, "count(*) as count")
-	page := gormplus.NewPage[deptCount](1, 2)
-	pageResult, resultDb := gormplus.SelectModelPage[User, deptCount](page, q)
+	page := gplus.NewPage[deptCount](1, 2)
+	pageResult, resultDb := gplus.SelectPageModel[User, deptCount](page, q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)
 	}
@@ -151,9 +151,9 @@ func TestSelectTablePage(t *testing.T) {
 }
 
 func TestSelectCount(t *testing.T) {
-	q := gormplus.NewQuery[User]()
+	q := gplus.NewQuery[User]()
 	q.Eq(UserColumn.Age, 18)
-	count, resultDb := gormplus.SelectCount(q)
+	count, resultDb := gplus.SelectCount(q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)
 	}

@@ -1,6 +1,8 @@
-package gormplus
+package gplus
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type CommonDao[T any] struct {
 }

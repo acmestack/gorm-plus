@@ -1,14 +1,14 @@
-package example
+package base
 
 import (
 	"fmt"
-	"github.com/gorm-plus/gorm-plus/gormplus"
+	"github.com/gorm-plus/gorm-plus/gplus"
 	"testing"
 )
 
 func TestUpdateById(t *testing.T) {
 	user := &User{ID: 1, Username: "zhangsan", Password: "123456", Age: 18, Score: 100, Dept: "A部门asdfasdf"}
-	result := gormplus.UpdateById(user)
+	result := gplus.UpdateById(user)
 	if result.Error != nil {
 		fmt.Println(result.Error)
 	}
@@ -16,10 +16,10 @@ func TestUpdateById(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	q := gormplus.NewQuery[User]()
+	q := gplus.NewQuery[User]()
 	q.Eq(UserColumn.Username, "zhangsan").Set(UserColumn.Dept, "相关部门123123").
 		Set(UserColumn.Phone, 12312)
-	result := gormplus.Update(q)
+	result := gplus.Update(q)
 	if result.Error != nil {
 		fmt.Println(result.Error)
 	}

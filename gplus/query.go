@@ -1,4 +1,4 @@
-package gormplus
+package gplus
 
 import (
 	"fmt"

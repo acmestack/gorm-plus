@@ -1,4 +1,4 @@
-package gormplus
+package gplus
 
 import (
 	"gorm.io/gorm"
@@ -99,7 +99,7 @@ func SelectList[T any](q *Query[T]) ([]*T, *gorm.DB) {
 	return results, resultDb
 }
 
-func SelectModelList[T any, R any](q *Query[T]) ([]*R, *gorm.DB) {
+func SelectListModel[T any, R any](q *Query[T]) ([]*R, *gorm.DB) {
 	resultDb := buildCondition(q)
 	var results []*R
 	resultDb.Scan(&results)
@@ -119,7 +119,7 @@ func SelectPage[T any](page *Page[T], q *Query[T]) (*Page[T], *gorm.DB) {
 	return page, resultDb
 }
 
-func SelectModelPage[T any, R any](page *Page[R], q *Query[T]) (*Page[R], *gorm.DB) {
+func SelectPageModel[T any, R any](page *Page[R], q *Query[T]) (*Page[R], *gorm.DB) {
 	total, countDb := SelectCount[T](q)
 	if countDb.Error != nil {
 		return page, countDb

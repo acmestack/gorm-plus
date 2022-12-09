@@ -1,15 +1,15 @@
-package example
+package base
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorm-plus/gorm-plus/gormplus"
+	"github.com/gorm-plus/gorm-plus/gplus"
 	"testing"
 )
 
 func TestInsert(t *testing.T) {
 	user := &User{Username: "zhangsan", Password: "123456", Age: 18, Score: 100, Dept: "A部门"}
-	result := gormplus.Insert(user)
+	result := gplus.Insert(user)
 	if result.Error != nil {
 		fmt.Println(result.Error)
 	}
@@ -32,7 +32,7 @@ func TestInsertBatch(t *testing.T) {
 	users = append(users, user5)
 	users = append(users, user6)
 
-	result := gormplus.InsertBatch[User](users)
+	result := gplus.InsertBatch[User](users)
 	if result.Error != nil {
 		fmt.Println(result.Error)
 	}
@@ -59,7 +59,7 @@ func TestInsertBatchSize(t *testing.T) {
 	users = append(users, user5)
 	users = append(users, user6)
 
-	result := gormplus.InsertBatchSize[User](users, 3)
+	result := gplus.InsertBatchSize[User](users, 3)
 	if result.Error != nil {
 		fmt.Println(result.Error)
 	}

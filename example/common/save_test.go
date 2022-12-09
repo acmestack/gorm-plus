@@ -1,4 +1,4 @@
-package example
+package common
 
 import (
 	"encoding/json"
@@ -6,15 +6,9 @@ import (
 	"testing"
 )
 
-var saveUserDao *UserDao[User]
-
-func init() {
-	saveUserDao = NewUserDao[User]()
-}
-
 func TestSave(t *testing.T) {
 	user1 := &User{Username: "zhangsan1", Password: "123456", Age: 18, Score: 12, Dept: "导弹部门"}
-	resultDb := saveUserDao.Save(user1)
+	resultDb := userDao.Save(user1)
 	fmt.Println("RowsAffected:", resultDb.RowsAffected)
 	marshal, _ := json.Marshal(user1)
 	fmt.Println("user1:", string(marshal))
@@ -26,7 +20,7 @@ func TestSaveBatch(t *testing.T) {
 	var users []*User
 	users = append(users, user1)
 	users = append(users, user2)
-	resultDb := saveUserDao.SaveBatch(users)
+	resultDb := userDao.SaveBatch(users)
 	fmt.Println("RowsAffected:", resultDb.RowsAffected)
 	for _, u := range users {
 		marshal, _ := json.Marshal(u)
@@ -44,7 +38,7 @@ func TestSaveBatchSize(t *testing.T) {
 	users = append(users, user2)
 	users = append(users, user3)
 	users = append(users, user4)
-	resultDb := saveUserDao.SaveBatchSize(users, 2)
+	resultDb := userDao.SaveBatchSize(users, 2)
 	fmt.Println("RowsAffected:", resultDb.RowsAffected)
 	for _, u := range users {
 		marshal, _ := json.Marshal(u)

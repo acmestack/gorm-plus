@@ -15,16 +15,27 @@
  * limitations under the License.
  */
 
-package gplus
+package tests
 
 import (
-	"testing"
+	"time"
 )
 
-func TestService_Save(t *testing.T) {
+// +gplus:column=true
 
+type User struct {
+	ID        int64
+	Username  string `gorm:"column:username"`
+	Password  string
+	Address   string
+	Age       int
+	Phone     string
+	Score     int
+	Dept      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-func TestService_list(t *testing.T) {
-
+func (User) TableName() string {
+	return "Users"
 }

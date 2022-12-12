@@ -220,13 +220,13 @@ func TestDeleteByIds(t *testing.T) {
 
 func TestUpdateById(t *testing.T) {
 	user1suffix := fmt.Sprintf("%v", time.Now().UnixMilli())
-	user1Name := "delete-user" + user1suffix
+	user1Name := "update-user" + user1suffix
 	user5suffix := fmt.Sprintf("%v", time.Now().UnixMilli())
-	user2Name := "delete-user" + user5suffix
+	user2Name := "update-user" + user5suffix
 	user1 := &User{Username: user1Name, Password: "123456", Age: 18, Score: 12, Dept: "财务部门"}
-	user2 := &User{Username: "delete-user2", Password: "123456", Age: 16, Score: 34, Dept: "行政部门"}
-	user3 := &User{Username: "delete-user3", Password: "123456", Age: 26, Score: 33, Dept: "研发部门"}
-	user4 := &User{Username: "delete-user4", Password: "123456", Age: 16, Score: 33, Dept: "研发部门"}
+	user2 := &User{Username: "update-user2", Password: "123456", Age: 16, Score: 34, Dept: "行政部门"}
+	user3 := &User{Username: "update-user3", Password: "123456", Age: 26, Score: 33, Dept: "研发部门"}
+	user4 := &User{Username: "update-user4", Password: "123456", Age: 16, Score: 33, Dept: "研发部门"}
 	user5 := &User{Username: user2Name, Password: "123456", Age: 36, Score: 33, Dept: "研发部门"}
 	users := []*User{user1, user2, user3, user4, user5}
 
@@ -330,7 +330,7 @@ func TestSelectByIds(t *testing.T) {
 
 func TestSelectOne(t *testing.T) {
 	user1suffix := fmt.Sprintf("%v", time.Now().UnixMilli())
-	user1Name := "delete-user" + user1suffix
+	user1Name := "select-user" + user1suffix
 	user := &User{Username: user1Name, Password: "123456", Age: 18, Score: 100, Dept: "财务部门"}
 	result := gplus.Insert(user)
 	if result.Error != nil {

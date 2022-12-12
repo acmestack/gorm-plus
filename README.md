@@ -7,7 +7,7 @@ This is an plus version of gorm, which is similar to the mybatis-plus syntax.
 
 go get github.com/acmestack/gorm-plus
 
-go install github.com/acmestack/gorm-plus/cmd/gplus
+go install github.com/acmestack/gorm-plus/cmd/gplus@latest
 
 ## 生成工具gplus
 

@@ -16,7 +16,7 @@ go install github.com/acmestack/gorm-plus/cmd/gplus@latest
 我们在使用gorm的时候，是需要手写字段名称的，例如这样：
 
 ```go
-gormDb.Where("username = ? age = ?","zhangsan",18)
+gormDb.Where("username = ? and age = ?","zhangsan",18)
 ```
 
 一旦名称长，非常容易误写，而且如果有字段名称修改的话，还需要全局搜索一个个地修改，比较麻烦。
@@ -35,7 +35,7 @@ gplus 会在输入的路径下面生成 `zz_gen.column.go`文件。
 
 例如：
 
-在example目录下创建了了一个users.go 目录，执行 `gplus en paths=./eample`
+在example目录下创建了了一个users.go 目录，执行 `gplus gen paths=./eample`
 
 users.go
 

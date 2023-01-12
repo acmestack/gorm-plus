@@ -24,6 +24,10 @@ import (
 type CommonDao[T any] struct {
 }
 
+func (service CommonDao[T]) Db() *gorm.DB {
+	return gormDb
+}
+
 func (service CommonDao[T]) Save(entity *T) *gorm.DB {
 	return Insert[T](entity)
 }

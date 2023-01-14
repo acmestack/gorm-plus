@@ -18,6 +18,7 @@
 package gplus
 
 import (
+	"github.com/acmestack/gorm-plus/constants"
 	"gorm.io/gorm"
 )
 
@@ -40,16 +41,22 @@ func NewPage[T any](current, size int) *Page[T] {
 }
 
 func Insert[T any](entity *T) *gorm.DB {
-	resultDb := gormDb.Create(&entity)
+	resultDb := gormDb.Create(entity)
 	return resultDb
 }
 
-func InsertBatch[T any](entities any) *gorm.DB {
+func InsertBatch[T any](entities []*T) *gorm.DB {
+	if len(entities) == 0 {
+		return gormDb
+	}
 	resultDb := gormDb.CreateInBatches(entities, defaultBatchSize)
 	return resultDb
 }
 
-func InsertBatchSize[T any](entities any, batchSize int) *gorm.DB {
+func InsertBatchSize[T any](entities []*T, batchSize int) *gorm.DB {
+	if len(entities) == 0 {
+		return gormDb
+	}
 	if batchSize <= 0 {
 		batchSize = defaultBatchSize
 	}
@@ -57,14 +64,20 @@ func InsertBatchSize[T any](entities any, batchSize int) *gorm.DB {
 	return resultDb
 }
 
-func DeleteById[T any](id any) *gorm.DB {
-	resultDb := gormDb.Delete(new(T), id)
+func DeleteById[T any, K PrimaryKey](id K, primaryKeyColumn ...string) *gorm.DB {
+	var entity T
+	resultDb := gormDb.Where(getPKColumn(primaryKeyColumn), id).Delete(&entity)
 	return resultDb
 }
 
-func DeleteByIds[T any](ids any) *gorm.DB {
-	var entities []T
-	resultDb := gormDb.Delete(&entities, ids)
+func DeleteByIds[T any, K PrimaryKey](ids []K, primaryKeyColumn ...string) *gorm.DB {
+	if len(ids) == 0 {
+		return gormDb
+	}
+
+	q := NewQuery[T]()
+	q.In(getPKColumn(primaryKeyColumn), ids)
+	resultDb := Delete[T](q)
 	return resultDb
 }
 
@@ -74,8 +87,8 @@ func Delete[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-func UpdateById[T any](entity *T) *gorm.DB {
-	resultDb := gormDb.Model(&entity).Updates(&entity)
+func UpdateById[T any, K PrimaryKey](entity *T, id K, primaryKeyColumn ...string) *gorm.DB {
+	resultDb := gormDb.Model(&entity).Where(getPKColumn(primaryKeyColumn), id).Updates(entity)
 	return resultDb
 }
 
@@ -84,29 +97,29 @@ func Update[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-func SelectById[T any](id any) (*T, *gorm.DB) {
-	var entity *T
+func SelectById[T any, K PrimaryKey](id K) (*T, *gorm.DB) {
+	var entity T
 	resultDb := gormDb.Take(&entity, id)
 	if resultDb.RowsAffected == 0 {
 		return nil, resultDb
 	}
-	return entity, resultDb
+	return &entity, resultDb
 }
 
-func SelectByIds[T any](ids any) ([]*T, *gorm.DB) {
-	var results []*T
-	resultDb := gormDb.Find(&results, ids)
-	return results, resultDb
+func SelectByIds[T any, K PrimaryKey](ids []K, primaryKeyColumn ...string) ([]*T, *gorm.DB) {
+	q := NewQuery[T]()
+	q.In(getPKColumn(primaryKeyColumn), ids)
+	return SelectList[T](q)
 }
 
 func SelectOne[T any](q *Query[T]) (*T, *gorm.DB) {
-	var entity *T
+	var entity T
 	resultDb := buildCondition(q)
 	resultDb.Take(&entity)
 	if resultDb.RowsAffected == 0 {
 		return nil, resultDb
 	}
-	return entity, resultDb
+	return &entity, resultDb
 }
 
 func SelectList[T any](q *Query[T]) ([]*T, *gorm.DB) {
@@ -210,4 +223,12 @@ func buildCondition[T any](q *Query[T]) *gorm.DB {
 		}
 	}
 	return resultDb
+}
+
+// getPKColumn 获取主键key
+func getPKColumn(primaryKeyColumn []string) string {
+	if len(primaryKeyColumn) > 0 {
+		return primaryKeyColumn[0]
+	}
+	return constants.PK
 }

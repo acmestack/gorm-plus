@@ -21,4 +21,5 @@ const (
 	Comma        = ","
 	LeftBracket  = "("
 	RightBracket = ")"
+	PK           = "id"
 )

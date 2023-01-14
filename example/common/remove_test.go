@@ -29,7 +29,7 @@ func TestRemoveById(t *testing.T) {
 }
 
 func TestRemoveByIds(t *testing.T) {
-	var ids []int
+	var ids []int64
 	ids = append(ids, 5)
 	ids = append(ids, 6)
 	resultDb := userDao.RemoveByIds(ids)

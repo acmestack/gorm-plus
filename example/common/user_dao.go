@@ -22,7 +22,7 @@ import "github.com/acmestack/gorm-plus/gplus"
 var userDao = NewUserDao[User]()
 
 type UserDao[T any] struct {
-	gplus.CommonDao[T]
+	gplus.CommonDao[T, int64]
 }
 
 func NewUserDao[T any]() *UserDao[T] {

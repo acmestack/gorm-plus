@@ -24,7 +24,7 @@ import (
 
 func TestUpdateById(t *testing.T) {
 	user4 := &User{ID: 4, Username: "zhangsan666", Password: "123456", Age: 13, Score: 12, Dept: "导弹部门"}
-	userDao.UpdateById(user4)
+	userDao.UpdateById(user4, user4.ID)
 }
 
 func TestUpdate(t *testing.T) {

@@ -25,7 +25,7 @@ import (
 
 func TestUpdateById(t *testing.T) {
 	user := &User{ID: 1, Username: "zhangsan", Password: "123456", Age: 18, Score: 100, Dept: "A部门asdfasdf"}
-	result := gplus.UpdateById(user)
+	result := gplus.UpdateById(user, user.ID)
 	if result.Error != nil {
 		fmt.Println(result.Error)
 	}

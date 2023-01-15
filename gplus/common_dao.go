@@ -45,7 +45,7 @@ func (service CommonDao[T, K]) SaveBatchSize(entities []*T, batchSize int) *gorm
 	return InsertBatchSize[T](entities, batchSize)
 }
 
-func (service CommonDao[T, K]) RemoveById(id any) *gorm.DB {
+func (service CommonDao[T, K]) RemoveById(id K) *gorm.DB {
 	return DeleteById[T, K](id, service.pkColumn)
 }
 

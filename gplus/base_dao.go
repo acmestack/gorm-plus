@@ -64,17 +64,13 @@ func InsertBatchSize[T any](entities []*T, batchSize int) *gorm.DB {
 	return resultDb
 }
 
-func DeleteById[T any, K PrimaryKey](id K, primaryKeyColumn ...string) *gorm.DB {
+func DeleteById[T any](id any, primaryKeyColumn ...string) *gorm.DB {
 	var entity T
 	resultDb := gormDb.Where(getPKColumn(primaryKeyColumn), id).Delete(&entity)
 	return resultDb
 }
 
-func DeleteByIds[T any, K PrimaryKey](ids []K, primaryKeyColumn ...string) *gorm.DB {
-	if len(ids) == 0 {
-		return gormDb
-	}
-
+func DeleteByIds[T any](ids any, primaryKeyColumn ...string) *gorm.DB {
 	q := NewQuery[T]()
 	q.In(getPKColumn(primaryKeyColumn), ids)
 	resultDb := Delete[T](q)
@@ -87,7 +83,7 @@ func Delete[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-func UpdateById[T any, K PrimaryKey](entity *T, id K, primaryKeyColumn ...string) *gorm.DB {
+func UpdateById[T any](entity *T, id any, primaryKeyColumn ...string) *gorm.DB {
 	resultDb := gormDb.Model(&entity).Where(getPKColumn(primaryKeyColumn), id).Updates(entity)
 	return resultDb
 }
@@ -97,7 +93,7 @@ func Update[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-func SelectById[T any, K PrimaryKey](id K) (*T, *gorm.DB) {
+func SelectById[T any](id any) (*T, *gorm.DB) {
 	var entity T
 	resultDb := gormDb.Take(&entity, id)
 	if resultDb.RowsAffected == 0 {
@@ -106,7 +102,7 @@ func SelectById[T any, K PrimaryKey](id K) (*T, *gorm.DB) {
 	return &entity, resultDb
 }
 
-func SelectByIds[T any, K PrimaryKey](ids []K, primaryKeyColumn ...string) ([]*T, *gorm.DB) {
+func SelectByIds[T any](ids any, primaryKeyColumn ...string) ([]*T, *gorm.DB) {
 	q := NewQuery[T]()
 	q.In(getPKColumn(primaryKeyColumn), ids)
 	return SelectList[T](q)

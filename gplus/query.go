@@ -112,12 +112,12 @@ func (q *Query[T]) IsNotNull(column string) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) In(column string, val ...any) *Query[T] {
+func (q *Query[T]) In(column string, val any) *Query[T] {
 	q.addCond(column, val, constants.In)
 	return q
 }
 
-func (q *Query[T]) NotIn(column string, val ...any) *Query[T] {
+func (q *Query[T]) NotIn(column string, val any) *Query[T] {
 	q.addCond(column, val, constants.Not+" "+constants.In)
 	return q
 }

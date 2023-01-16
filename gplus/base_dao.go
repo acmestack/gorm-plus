@@ -20,6 +20,9 @@ package gplus
 import (
 	"github.com/acmestack/gorm-plus/constants"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
+	"gorm.io/gorm/utils"
+	"reflect"
 )
 
 var gormDb *gorm.DB
@@ -64,15 +67,15 @@ func InsertBatchSize[T any](entities []*T, batchSize int) *gorm.DB {
 	return resultDb
 }
 
-func DeleteById[T any](id any, primaryKeyColumn ...string) *gorm.DB {
+func DeleteById[T any](id any) *gorm.DB {
 	var entity T
-	resultDb := gormDb.Where(getPKColumn(primaryKeyColumn), id).Delete(&entity)
+	resultDb := gormDb.Where(getPKColumn[T](), id).Delete(&entity)
 	return resultDb
 }
 
-func DeleteByIds[T any](ids any, primaryKeyColumn ...string) *gorm.DB {
+func DeleteByIds[T any](ids any) *gorm.DB {
 	q := NewQuery[T]()
-	q.In(getPKColumn(primaryKeyColumn), ids)
+	q.In(getPKColumn[T](), ids)
 	resultDb := Delete[T](q)
 	return resultDb
 }
@@ -83,8 +86,8 @@ func Delete[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-func UpdateById[T any](entity *T, id any, primaryKeyColumn ...string) *gorm.DB {
-	resultDb := gormDb.Model(&entity).Where(getPKColumn(primaryKeyColumn), id).Updates(entity)
+func UpdateById[T any](entity *T, id any) *gorm.DB {
+	resultDb := gormDb.Model(&entity).Where(getPKColumn[T](), id).Updates(entity)
 	return resultDb
 }
 
@@ -102,9 +105,9 @@ func SelectById[T any](id any) (*T, *gorm.DB) {
 	return &entity, resultDb
 }
 
-func SelectByIds[T any](ids any, primaryKeyColumn ...string) ([]*T, *gorm.DB) {
+func SelectByIds[T any](ids any) ([]*T, *gorm.DB) {
 	q := NewQuery[T]()
-	q.In(getPKColumn(primaryKeyColumn), ids)
+	q.In(getPKColumn[T](), ids)
 	return SelectList[T](q)
 }
 
@@ -222,9 +225,22 @@ func buildCondition[T any](q *Query[T]) *gorm.DB {
 }
 
 // getPKColumn 获取主键key
-func getPKColumn(primaryKeyColumn []string) string {
-	if len(primaryKeyColumn) > 0 {
-		return primaryKeyColumn[0]
+func getPKColumn[T any]() string {
+	var entity T
+	entityType := reflect.TypeOf(entity)
+	numField := entityType.NumField()
+	var columnName string
+	for i := 0; i < numField; i++ {
+		field := entityType.Field(i)
+		tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
+		isPrimaryKey := utils.CheckTruth(tagSetting["PRIMARYKEY"], tagSetting["PRIMARY_KEY"])
+		if isPrimaryKey {
+			columnName = tagSetting["COLUMN"]
+			break
+		}
 	}
-	return constants.PK
+	if columnName == "" {
+		return constants.DefaultPrimaryName
+	}
+	return columnName
 }

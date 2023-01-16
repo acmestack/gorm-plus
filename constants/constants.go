@@ -18,8 +18,8 @@
 package constants
 
 const (
-	Comma        = ","
-	LeftBracket  = "("
-	RightBracket = ")"
-	PK           = "id"
+	Comma              = ","
+	LeftBracket        = "("
+	RightBracket       = ")"
+	DefaultPrimaryName = "id"
 )

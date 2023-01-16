@@ -24,10 +24,20 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"testing"
+	"time"
 )
 
+type Test2 struct {
+	TestId    string `gorm:"primaryKey"`
+	Code      string
+	Price     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt time.Time
+}
+
 func TestSelectById(t *testing.T) {
-	user, resultDb := gplus.SelectById[User](1)
+	user, resultDb := gplus.SelectById[User]("or 1=1")
 	if resultDb.Error != nil {
 		if errors.Is(resultDb.Error, gorm.ErrRecordNotFound) {
 			log.Fatalln("SelectById Data not found:", resultDb.Error)
@@ -36,6 +46,19 @@ func TestSelectById(t *testing.T) {
 	}
 	log.Println("RowsAffected:", resultDb.RowsAffected)
 	marshal, _ := json.Marshal(user)
+	log.Println(string(marshal))
+}
+
+func TestSelectByStrId(t *testing.T) {
+	test, resultDb := gplus.SelectById[Test2]("a = 1 or 1=1")
+	if resultDb.Error != nil {
+		if errors.Is(resultDb.Error, gorm.ErrRecordNotFound) {
+			log.Fatalln("SelectById Data not found:", resultDb.Error)
+		}
+		log.Fatalln("SelectById error:", resultDb.Error)
+	}
+	log.Println("RowsAffected:", resultDb.RowsAffected)
+	marshal, _ := json.Marshal(test)
 	log.Println(string(marshal))
 }
 

@@ -97,12 +97,11 @@ func Update[T any](q *Query[T]) *gorm.DB {
 }
 
 func SelectById[T any](id any) (*T, *gorm.DB) {
+	q := NewQuery[T]()
+	q.Eq(getPKColumn[T](), id)
 	var entity T
-	resultDb := gormDb.Take(&entity, id)
-	if resultDb.RowsAffected == 0 {
-		return nil, resultDb
-	}
-	return &entity, resultDb
+	resultDb := buildCondition(q)
+	return &entity, resultDb.Limit(1).Find(&entity)
 }
 
 func SelectByIds[T any](ids any) ([]*T, *gorm.DB) {
@@ -114,11 +113,7 @@ func SelectByIds[T any](ids any) ([]*T, *gorm.DB) {
 func SelectOne[T any](q *Query[T]) (*T, *gorm.DB) {
 	var entity T
 	resultDb := buildCondition(q)
-	resultDb.Take(&entity)
-	if resultDb.RowsAffected == 0 {
-		return nil, resultDb
-	}
-	return &entity, resultDb
+	return &entity, resultDb.Limit(1).Find(&entity)
 }
 
 func SelectList[T any](q *Query[T]) ([]*T, *gorm.DB) {

@@ -235,7 +235,12 @@ func getPKColumn[T any]() string {
 		tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
 		isPrimaryKey := utils.CheckTruth(tagSetting["PRIMARYKEY"], tagSetting["PRIMARY_KEY"])
 		if isPrimaryKey {
-			columnName = tagSetting["COLUMN"]
+			name, ok := tagSetting["COLUMN"]
+			if !ok {
+				namingStrategy := schema.NamingStrategy{}
+				name = namingStrategy.ColumnName("", field.Name)
+			}
+			columnName = name
 			break
 		}
 	}

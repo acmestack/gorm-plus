@@ -23,7 +23,7 @@ import (
 
 type CommonDao[T any] struct{}
 
-func NewCommonDao[T any](pk string) *CommonDao[T] {
+func NewCommonDao[T any]() *CommonDao[T] {
 	return &CommonDao[T]{}
 }
 
@@ -47,7 +47,7 @@ func (service CommonDao[T]) RemoveById(id any) *gorm.DB {
 	return DeleteById[T](id)
 }
 
-func (service CommonDao[T]) RemoveByIds(ids []any) *gorm.DB {
+func (service CommonDao[T]) RemoveByIds(ids any) *gorm.DB {
 	return DeleteByIds[T](ids)
 }
 
@@ -79,7 +79,7 @@ func (service CommonDao[T]) List(q *Query[T]) ([]*T, *gorm.DB) {
 	return SelectList[T](q)
 }
 
-func (service CommonDao[T]) ListByIds(ids []any) ([]*T, *gorm.DB) {
+func (service CommonDao[T]) ListByIds(ids any) ([]*T, *gorm.DB) {
 	return SelectByIds[T](ids)
 }
 

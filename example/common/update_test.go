@@ -28,7 +28,7 @@ func TestUpdateById(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	query, _ := gplus.NewQuery[User]()
-	query.Eq(UserColumn.Username, "zhangsan1").Set(UserColumn.Age, 50)
+	query, model := gplus.NewQuery[User]()
+	query.Eq(&model.Username, "zhangsan1").Set(&model.Age, 50)
 	userDao.Update(query)
 }

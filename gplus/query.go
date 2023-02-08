@@ -79,44 +79,46 @@ func (q *Query[T]) Le(column any, val any) *Query[T] {
 }
 
 func (q *Query[T]) Like(column any, val any) *Query[T] {
-	s := val.(string)
+	s := fmt.Sprintf("%v", val)
 	q.addCond(column, "%"+s+"%", constants.Like)
 	return q
 }
 
 func (q *Query[T]) NotLike(column any, val any) *Query[T] {
-	s := val.(string)
+	s := fmt.Sprintf("%v", val)
 	q.addCond(column, "%"+s+"%", constants.Not+" "+constants.Like)
 	return q
 }
 
 func (q *Query[T]) LikeLeft(column any, val any) *Query[T] {
-	s := val.(string)
+	s := fmt.Sprintf("%v", val)
 	q.addCond(column, "%"+s, constants.Like)
 	return q
 }
 
 func (q *Query[T]) LikeRight(column any, val any) *Query[T] {
-	s := val.(string)
+	s := fmt.Sprintf("%v", val)
 	q.addCond(column, s+"%", constants.Like)
 	return q
 }
 
-func (q *Query[T]) IsNull(column string) *Query[T] {
+func (q *Query[T]) IsNull(column any) *Query[T] {
+	columnName := q.getColumnName(column)
 	q.buildAndIfNeed()
-	cond := fmt.Sprintf("%s is null", column)
+	cond := fmt.Sprintf("%s is null", columnName)
 	q.QueryBuilder.WriteString(cond)
 	return q
 }
 
-func (q *Query[T]) IsNotNull(column string) *Query[T] {
+func (q *Query[T]) IsNotNull(column any) *Query[T] {
+	columnName := q.getColumnName(column)
 	q.buildAndIfNeed()
-	cond := fmt.Sprintf("%s is not null", column)
+	cond := fmt.Sprintf("%s is not null", columnName)
 	q.QueryBuilder.WriteString(cond)
 	return q
 }
 
-func (q *Query[T]) In(column string, val any) *Query[T] {
+func (q *Query[T]) In(column any, val any) *Query[T] {
 	q.addCond(column, val, constants.In)
 	return q
 }
@@ -127,23 +129,28 @@ func (q *Query[T]) NotIn(column any, val any) *Query[T] {
 }
 
 func (q *Query[T]) Between(column any, start, end any) *Query[T] {
+	columnName := q.getColumnName(column)
 	q.buildAndIfNeed()
-	cond := fmt.Sprintf("%s %s ? and ? ", column, constants.Between)
+	cond := fmt.Sprintf("%s %s ? and ? ", columnName, constants.Between)
 	q.QueryBuilder.WriteString(cond)
 	q.QueryArgs = append(q.QueryArgs, start, end)
 	return q
 }
 
 func (q *Query[T]) NotBetween(column any, start, end any) *Query[T] {
+	columnName := q.getColumnName(column)
 	q.buildAndIfNeed()
-	cond := fmt.Sprintf("%s %s %s ? and ? ", column, constants.Not, constants.Between)
+	cond := fmt.Sprintf("%s %s %s ? and ? ", columnName, constants.Not, constants.Between)
 	q.QueryBuilder.WriteString(cond)
 	q.QueryArgs = append(q.QueryArgs, start, end)
 	return q
 }
 
-func (q *Query[T]) Distinct(column ...string) *Query[T] {
-	q.DistinctColumns = column
+func (q *Query[T]) Distinct(columns ...any) *Query[T] {
+	for _, v := range columns {
+		columnName := q.ColumnNameMap[reflect.ValueOf(v).Pointer()]
+		q.DistinctColumns = append(q.DistinctColumns, columnName)
+	}
 	return q
 }
 
@@ -175,15 +182,8 @@ func (q *Query[T]) OrBracket(bracketQuery *Query[T]) *Query[T] {
 
 func (q *Query[T]) Select(columns ...any) *Query[T] {
 	for _, v := range columns {
-		valueOf := reflect.ValueOf(v)
-		switch valueOf.Kind() {
-		case reflect.String:
-			columnStr := v.(string)
-			q.SelectColumns = append(q.SelectColumns, columnStr)
-		case reflect.Pointer:
-			columnName := q.ColumnNameMap[valueOf.Pointer()]
-			q.SelectColumns = append(q.SelectColumns, columnName)
-		}
+		columnName := q.getColumnName(v)
+		q.SelectColumns = append(q.SelectColumns, columnName)
 	}
 	return q
 }
@@ -216,7 +216,7 @@ func (q *Query[T]) Having(having string, args ...any) *Query[T] {
 }
 
 func (q *Query[T]) Set(column any, val any) *Query[T] {
-	columnName := q.ColumnNameMap[reflect.ValueOf(column).Pointer()]
+	columnName := q.getColumnName(column)
 	if q.UpdateMap == nil {
 		q.UpdateMap = make(map[string]any)
 	}
@@ -225,7 +225,7 @@ func (q *Query[T]) Set(column any, val any) *Query[T] {
 }
 
 func (q *Query[T]) addCond(column any, val any, condType string) {
-	columnName := q.ColumnNameMap[reflect.ValueOf(column).Pointer()]
+	columnName := q.getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s ?", columnName, condType)
 	q.QueryBuilder.WriteString(cond)
@@ -271,4 +271,16 @@ func (q *Query[T]) buildColumnNameMap() *T {
 		}
 	}
 	return model
+}
+
+func (q *Query[T]) getColumnName(v any) string {
+	var columnName string
+	valueOf := reflect.ValueOf(v)
+	switch valueOf.Kind() {
+	case reflect.String:
+		columnName = v.(string)
+	case reflect.Pointer:
+		columnName = q.ColumnNameMap[valueOf.Pointer()]
+	}
+	return columnName
 }

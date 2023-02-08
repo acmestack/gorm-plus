@@ -77,7 +77,7 @@ func TestSelectByIds(t *testing.T) {
 
 func TestSelectOne1(t *testing.T) {
 	q, model := gplus.NewQuery[User]()
-	q.Eq(&model.Username, "zhangsan1")
+	q.Eq(model.Username, "zhangsan")
 	user, resultDb := gplus.SelectOne(q)
 	if resultDb.Error != nil {
 		if errors.Is(resultDb.Error, gorm.ErrRecordNotFound) {

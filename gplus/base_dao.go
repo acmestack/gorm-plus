@@ -219,7 +219,7 @@ func buildCondition[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-// getPKColumn 获取主键key
+// getPKColumn
 func getPKColumn[T any]() string {
 	var entity T
 	entityType := reflect.TypeOf(entity)

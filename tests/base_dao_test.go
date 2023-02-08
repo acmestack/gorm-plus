@@ -240,9 +240,9 @@ func TestUpdateById(t *testing.T) {
 		}
 	}
 
-	query, _ := gplus.NewQuery[User]()
+	query, model := gplus.NewQuery[User]()
 	// delete user1 and user5
-	query.Eq(UserColumn.Username, user1Name).Or().Eq(UserColumn.Username, user2Name)
+	query.Eq(&model.Username, user1Name).Or().Eq(&model.Username, user2Name)
 
 	if res := gplus.Delete(query); res.Error != nil || res.RowsAffected != 2 {
 		t.Errorf("errors happened when deleteByIds: %v, affected: %v", res.Error, res.RowsAffected)
@@ -275,8 +275,8 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("rows affected expects: %v, got %v", 1, result.RowsAffected)
 	}
 
-	q, _ := gplus.NewQuery[User]()
-	q.Eq(UserColumn.ID, user.ID).Set(UserColumn.Score, 60)
+	q, model := gplus.NewQuery[User]()
+	q.Eq(&model.ID, user.ID).Set(&model.Score, 60)
 	if err := gplus.Update(q).Error; err != nil {
 		t.Errorf("errors happened when update: %v", err)
 	}
@@ -339,8 +339,8 @@ func TestSelectOne(t *testing.T) {
 		t.Fatalf("rows affected expects: %v, got %v", 1, result.RowsAffected)
 	}
 
-	query, _ := gplus.NewQuery[User]()
-	query.Eq(UserColumn.Username, user1Name)
+	query, model := gplus.NewQuery[User]()
+	query.Eq(&model.Username, user1Name)
 	resultUser, db := gplus.SelectOne[User](query)
 	if db.Error != nil {
 		t.Errorf("errors happened when selectByOne : %v", db.Error)
@@ -367,8 +367,8 @@ func TestSelectList(t *testing.T) {
 		t.Fatalf("rows affected expects: %v, got %v", 5, result.RowsAffected)
 	}
 
-	query, _ := gplus.NewQuery[User]()
-	query.Eq(UserColumn.Username, user1Name).Or().Eq(UserColumn.Username, user2Name)
+	query, model := gplus.NewQuery[User]()
+	query.Eq(&model.Username, user1Name).Or().Eq(&model.Username, user2Name)
 	resultUsers, db := gplus.SelectList(query)
 	if db.Error != nil {
 		t.Errorf("errors happened when SelectList : %v", db.Error)
@@ -396,9 +396,9 @@ func TestSelectPage(t *testing.T) {
 		t.Fatalf("rows affected expects: %v, got %v", 5, result.RowsAffected)
 	}
 
-	query, _ := gplus.NewQuery[User]()
+	query, model := gplus.NewQuery[User]()
 	page := gplus.NewPage[User](1, 10)
-	query.Eq(UserColumn.Username, user1Name).Or().Eq(UserColumn.Username, user2Name)
+	query.Eq(&model.Username, user1Name).Or().Eq(&model.Username, user2Name)
 	resultPage, db := gplus.SelectPage(page, query)
 	if db.Error != nil {
 		t.Errorf("errors happened when selectByIds : %v", db.Error)
@@ -430,8 +430,8 @@ func TestSelectCount(t *testing.T) {
 		t.Fatalf("rows affected expects: %v, got %v", 5, result.RowsAffected)
 	}
 
-	query, _ := gplus.NewQuery[User]()
-	query.Eq(UserColumn.Username, user1Name).Or().Eq(UserColumn.Username, user2Name)
+	query, model := gplus.NewQuery[User]()
+	query.Eq(&model.Username, user1Name).Or().Eq(&model.Username, user2Name)
 	count, db := gplus.SelectCount(query)
 	if db.Error != nil {
 		t.Errorf("errors happened when SelectCount : %v", db.Error)

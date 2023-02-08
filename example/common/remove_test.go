@@ -37,8 +37,8 @@ func TestRemoveByIds(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	query, _ := gplus.NewQuery[User]()
-	query.Eq(UserColumn.Username, "lisi")
+	query, model := gplus.NewQuery[User]()
+	query.Eq(&model.Username, "lisi")
 	resultDb := userDao.Remove(query)
 	fmt.Println("RowsAffected:", resultDb.RowsAffected)
 }

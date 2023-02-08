@@ -32,8 +32,8 @@ func TestDeleteById(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	q, _ := gplus.NewQuery[User]()
-	q.Ge(UserColumn.Age, 50)
+	q, model := gplus.NewQuery[User]()
+	q.Ge(&model.Age, 50)
 	result := gplus.Delete(q)
 	if result.Error != nil {
 		fmt.Println(result.Error)

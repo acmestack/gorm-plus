@@ -70,13 +70,13 @@ func InsertBatchSize[T any](entities []*T, batchSize int) *gorm.DB {
 
 func DeleteById[T any](id any) *gorm.DB {
 	var entity T
-	resultDb := gormDb.Where(getPKColumnName[T](), id).Delete(&entity)
+	resultDb := gormDb.Where(getPkColumnName[T](), id).Delete(&entity)
 	return resultDb
 }
 
 func DeleteByIds[T any](ids any) *gorm.DB {
 	q, _ := NewQuery[T]()
-	q.In(getPKColumnName[T](), ids)
+	q.In(getPkColumnName[T](), ids)
 	resultDb := Delete[T](q)
 	return resultDb
 }
@@ -88,7 +88,7 @@ func Delete[T any](q *Query[T]) *gorm.DB {
 }
 
 func UpdateById[T any](entity *T) *gorm.DB {
-	resultDb := gormDb.Model(&entity).Where(getPKColumnName[T](), getPKColumnValue(entity)).Updates(entity)
+	resultDb := gormDb.Model(&entity).Where(getPkColumnName[T](), getPkColumnValue(entity)).Updates(entity)
 	return resultDb
 }
 
@@ -99,7 +99,7 @@ func Update[T any](q *Query[T]) *gorm.DB {
 
 func SelectById[T any](id any) (*T, *gorm.DB) {
 	q, _ := NewQuery[T]()
-	q.Eq(getPKColumnName[T](), id)
+	q.Eq(getPkColumnName[T](), id)
 	var entity T
 	resultDb := buildCondition(q)
 	return &entity, resultDb.Limit(1).Find(&entity)
@@ -107,7 +107,7 @@ func SelectById[T any](id any) (*T, *gorm.DB) {
 
 func SelectByIds[T any](ids any) ([]*T, *gorm.DB) {
 	q, _ := NewQuery[T]()
-	q.In(getPKColumnName[T](), ids)
+	q.In(getPkColumnName[T](), ids)
 	return SelectList[T](q)
 }
 
@@ -220,7 +220,7 @@ func buildCondition[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-func getPKColumnName[T any]() string {
+func getPkColumnName[T any]() string {
 	var entity T
 	entityType := reflect.TypeOf(entity)
 	numField := entityType.NumField()
@@ -245,7 +245,7 @@ func getPKColumnName[T any]() string {
 	return columnName
 }
 
-func getPKColumnValue(entity any) string {
+func getPkColumnValue(entity any) string {
 	entityValue := reflect.ValueOf(entity)
 	entityValue = reflect.Indirect(entityValue)
 	entityType := reflect.Indirect(entityValue).Type()

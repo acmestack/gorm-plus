@@ -174,8 +174,8 @@ func TestSelectTablePage(t *testing.T) {
 		Dept  string
 		Count string
 	}
-	q, _ := gplus.NewQuery[User]()
-	q.Group(UserColumn.Dept).Select(UserColumn.Dept, "count(*) as count")
+	q, model := gplus.NewQuery[User]()
+	q.Group(&model.Dept).Select(UserColumn.Dept, "count(*) as count")
 	page := gplus.NewPage[deptCount](1, 2)
 	pageResult, resultDb := gplus.SelectPageModel[User, deptCount](page, q)
 	if resultDb.Error != nil {
@@ -189,8 +189,8 @@ func TestSelectTablePage(t *testing.T) {
 }
 
 func TestSelectCount(t *testing.T) {
-	q, _ := gplus.NewQuery[User]()
-	q.Eq(UserColumn.Age, 18)
+	q, model := gplus.NewQuery[User]()
+	q.Eq(&model.Age, 18)
 	count, resultDb := gplus.SelectCount(q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)

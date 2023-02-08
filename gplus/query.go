@@ -215,11 +215,12 @@ func (q *Query[T]) Having(having string, args ...any) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) Set(column string, val any) *Query[T] {
+func (q *Query[T]) Set(column any, val any) *Query[T] {
+	columnName := q.ColumnNameMap[reflect.ValueOf(column).Pointer()]
 	if q.UpdateMap == nil {
 		q.UpdateMap = make(map[string]any)
 	}
-	q.UpdateMap[column] = val
+	q.UpdateMap[columnName] = val
 	return q
 }
 

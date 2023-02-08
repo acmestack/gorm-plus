@@ -240,7 +240,7 @@ func TestUpdateById(t *testing.T) {
 		}
 	}
 
-	query := gplus.NewQuery[User]()
+	query, _ := gplus.NewQuery[User]()
 	// delete user1 and user5
 	query.Eq(UserColumn.Username, user1Name).Or().Eq(UserColumn.Username, user2Name)
 
@@ -275,7 +275,7 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("rows affected expects: %v, got %v", 1, result.RowsAffected)
 	}
 
-	q := gplus.NewQuery[User]()
+	q, _ := gplus.NewQuery[User]()
 	q.Eq(UserColumn.ID, user.ID).Set(UserColumn.Score, 60)
 	if err := gplus.Update(q).Error; err != nil {
 		t.Errorf("errors happened when update: %v", err)
@@ -339,7 +339,7 @@ func TestSelectOne(t *testing.T) {
 		t.Fatalf("rows affected expects: %v, got %v", 1, result.RowsAffected)
 	}
 
-	query := gplus.NewQuery[User]()
+	query, _ := gplus.NewQuery[User]()
 	query.Eq(UserColumn.Username, user1Name)
 	resultUser, db := gplus.SelectOne[User](query)
 	if db.Error != nil {
@@ -367,7 +367,7 @@ func TestSelectList(t *testing.T) {
 		t.Fatalf("rows affected expects: %v, got %v", 5, result.RowsAffected)
 	}
 
-	query := gplus.NewQuery[User]()
+	query, _ := gplus.NewQuery[User]()
 	query.Eq(UserColumn.Username, user1Name).Or().Eq(UserColumn.Username, user2Name)
 	resultUsers, db := gplus.SelectList(query)
 	if db.Error != nil {
@@ -396,7 +396,7 @@ func TestSelectPage(t *testing.T) {
 		t.Fatalf("rows affected expects: %v, got %v", 5, result.RowsAffected)
 	}
 
-	query := gplus.NewQuery[User]()
+	query, _ := gplus.NewQuery[User]()
 	page := gplus.NewPage[User](1, 10)
 	query.Eq(UserColumn.Username, user1Name).Or().Eq(UserColumn.Username, user2Name)
 	resultPage, db := gplus.SelectPage(page, query)
@@ -430,7 +430,7 @@ func TestSelectCount(t *testing.T) {
 		t.Fatalf("rows affected expects: %v, got %v", 5, result.RowsAffected)
 	}
 
-	query := gplus.NewQuery[User]()
+	query, _ := gplus.NewQuery[User]()
 	query.Eq(UserColumn.Username, user1Name).Or().Eq(UserColumn.Username, user2Name)
 	count, db := gplus.SelectCount(query)
 	if db.Error != nil {

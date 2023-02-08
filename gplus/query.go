@@ -20,6 +20,8 @@ package gplus
 import (
 	"fmt"
 	"github.com/acmestack/gorm-plus/constants"
+	"gorm.io/gorm/schema"
+	"reflect"
 	"strings"
 )
 
@@ -38,61 +40,63 @@ type Query[T any] struct {
 	HavingArgs        []any
 	LastCond          string
 	UpdateMap         map[string]any
+	ColumnNameMap     map[uintptr]string
 }
 
-func NewQuery[T any]() *Query[T] {
-	return &Query[T]{}
+func NewQuery[T any]() (*Query[T], *T) {
+	q := &Query[T]{}
+	return q, q.buildColumnNameMap()
 }
 
-func (q *Query[T]) Eq(column string, val any) *Query[T] {
+func (q *Query[T]) Eq(column any, val any) *Query[T] {
 	q.addCond(column, val, constants.Eq)
 	return q
 }
 
-func (q *Query[T]) Ne(column string, val any) *Query[T] {
+func (q *Query[T]) Ne(column any, val any) *Query[T] {
 	q.addCond(column, val, constants.Ne)
 	return q
 }
 
-func (q *Query[T]) Gt(column string, val any) *Query[T] {
+func (q *Query[T]) Gt(column any, val any) *Query[T] {
 	q.addCond(column, val, constants.Gt)
 	return q
 }
 
-func (q *Query[T]) Ge(column string, val any) *Query[T] {
+func (q *Query[T]) Ge(column any, val any) *Query[T] {
 	q.addCond(column, val, constants.Ge)
 	return q
 }
 
-func (q *Query[T]) Lt(column string, val any) *Query[T] {
+func (q *Query[T]) Lt(column any, val any) *Query[T] {
 	q.addCond(column, val, constants.Lt)
 	return q
 }
 
-func (q *Query[T]) Le(column string, val any) *Query[T] {
+func (q *Query[T]) Le(column any, val any) *Query[T] {
 	q.addCond(column, val, constants.Le)
 	return q
 }
 
-func (q *Query[T]) Like(column string, val any) *Query[T] {
+func (q *Query[T]) Like(column any, val any) *Query[T] {
 	s := val.(string)
 	q.addCond(column, "%"+s+"%", constants.Like)
 	return q
 }
 
-func (q *Query[T]) NotLike(column string, val any) *Query[T] {
+func (q *Query[T]) NotLike(column any, val any) *Query[T] {
 	s := val.(string)
 	q.addCond(column, "%"+s+"%", constants.Not+" "+constants.Like)
 	return q
 }
 
-func (q *Query[T]) LikeLeft(column string, val any) *Query[T] {
+func (q *Query[T]) LikeLeft(column any, val any) *Query[T] {
 	s := val.(string)
 	q.addCond(column, "%"+s, constants.Like)
 	return q
 }
 
-func (q *Query[T]) LikeRight(column string, val any) *Query[T] {
+func (q *Query[T]) LikeRight(column any, val any) *Query[T] {
 	s := val.(string)
 	q.addCond(column, s+"%", constants.Like)
 	return q
@@ -117,12 +121,12 @@ func (q *Query[T]) In(column string, val any) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) NotIn(column string, val any) *Query[T] {
+func (q *Query[T]) NotIn(column any, val any) *Query[T] {
 	q.addCond(column, val, constants.Not+" "+constants.In)
 	return q
 }
 
-func (q *Query[T]) Between(column string, start, end any) *Query[T] {
+func (q *Query[T]) Between(column any, start, end any) *Query[T] {
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s ? and ? ", column, constants.Between)
 	q.QueryBuilder.WriteString(cond)
@@ -130,7 +134,7 @@ func (q *Query[T]) Between(column string, start, end any) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) NotBetween(column string, start, end any) *Query[T] {
+func (q *Query[T]) NotBetween(column any, start, end any) *Query[T] {
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s %s ? and ? ", column, constants.Not, constants.Between)
 	q.QueryBuilder.WriteString(cond)
@@ -208,9 +212,10 @@ func (q *Query[T]) Set(column string, val any) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) addCond(column string, val any, condType string) {
+func (q *Query[T]) addCond(column any, val any, condType string) {
+	columnName := q.ColumnNameMap[reflect.ValueOf(column).Pointer()]
 	q.buildAndIfNeed()
-	cond := fmt.Sprintf("%s %s ?", column, condType)
+	cond := fmt.Sprintf("%s %s ?", columnName, condType)
 	q.QueryBuilder.WriteString(cond)
 	q.QueryBuilder.WriteString(" ")
 	q.LastCond = ""
@@ -233,4 +238,25 @@ func (q *Query[T]) buildOrder(orderType string, columns ...string) {
 		q.OrderBuilder.WriteString(" ")
 		q.OrderBuilder.WriteString(orderType)
 	}
+}
+
+func (q *Query[T]) buildColumnNameMap() *T {
+	q.ColumnNameMap = make(map[uintptr]string)
+	model := new(T)
+	valueOf := reflect.ValueOf(model)
+	typeOf := reflect.TypeOf(model)
+	for i := 0; i < valueOf.Elem().NumField(); i++ {
+		pointer := valueOf.Elem().Field(i).Addr().Pointer()
+		field := typeOf.Elem().Field(i)
+		tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
+		name, ok := tagSetting["COLUMN"]
+		if ok {
+			q.ColumnNameMap[pointer] = name
+		} else {
+			namingStrategy := schema.NamingStrategy{}
+			name = namingStrategy.ColumnName("", field.Name)
+			q.ColumnNameMap[pointer] = name
+		}
+	}
+	return model
 }

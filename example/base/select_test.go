@@ -76,25 +76,23 @@ func TestSelectByIds(t *testing.T) {
 }
 
 func TestSelectOne1(t *testing.T) {
-	q := gplus.NewQuery[User]()
-	q.Eq(UserColumn.Username, "zhangsan1")
+	q, model := gplus.NewQuery[User]()
+	q.Eq(&model.Username, "zhangsan1")
 	user, resultDb := gplus.SelectOne(q)
-
 	if resultDb.Error != nil {
 		if errors.Is(resultDb.Error, gorm.ErrRecordNotFound) {
 			log.Fatalln("SelectOne Data not found:", resultDb.Error)
 		}
 		log.Fatalln("SelectOne error:", resultDb.Error)
 	}
-
 	log.Println("RowsAffected:", resultDb.RowsAffected)
 	marshal, _ := json.Marshal(user)
 	log.Println(string(marshal))
 }
 
 func TestSelectOne2(t *testing.T) {
-	q := gplus.NewQuery[User]()
-	q.Eq(UserColumn.Username, "zhangsan").
+	q, model := gplus.NewQuery[User]()
+	q.Eq(&model.Username, "zhangsan").
 		Select(UserColumn.Username, UserColumn.Password)
 	user, resultDb := gplus.SelectOne(q)
 
@@ -111,8 +109,8 @@ func TestSelectOne2(t *testing.T) {
 }
 
 func TestSelectList(t *testing.T) {
-	q := gplus.NewQuery[User]()
-	q.Eq(UserColumn.Username, "zhangsan")
+	q, model := gplus.NewQuery[User]()
+	q.Eq(&model.Username, "zhangsan")
 	users, resultDb := gplus.SelectList(q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)
@@ -124,11 +122,11 @@ func TestSelectList(t *testing.T) {
 }
 
 func TestSelectBracketList(t *testing.T) {
-	q := gplus.NewQuery[User]()
-	bracketQuery := gplus.NewQuery[User]()
-	bracketQuery.Eq(UserColumn.Address, "上海").Or().Eq(UserColumn.Address, "北京")
+	q, model := gplus.NewQuery[User]()
+	bracketQuery, _ := gplus.NewQuery[User]()
+	bracketQuery.Eq(&model.Address, "上海").Or().Eq(&model.Address, "北京")
 
-	q.Eq(UserColumn.Username, "zhangsan").AndBracket(bracketQuery)
+	q.Eq(&model.Username, "zhangsan").AndBracket(bracketQuery)
 	users, resultDb := gplus.SelectList(q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)
@@ -144,7 +142,7 @@ func TestSelectTableList(t *testing.T) {
 		Dept  string
 		Count string
 	}
-	q := gplus.NewQuery[User]()
+	q, _ := gplus.NewQuery[User]()
 	q.Group(UserColumn.Dept).Select(UserColumn.Dept, "count(*) as count")
 	users, resultDb := gplus.SelectListModel[User, deptCount](q)
 	if resultDb.Error != nil {
@@ -157,8 +155,8 @@ func TestSelectTableList(t *testing.T) {
 }
 
 func TestSelectPage(t *testing.T) {
-	q := gplus.NewQuery[User]()
-	q.Eq(UserColumn.Age, 18)
+	q, model := gplus.NewQuery[User]()
+	q.Eq(&model.Age, 18)
 	page := gplus.NewPage[User](1, 10)
 	pageResult, resultDb := gplus.SelectPage(page, q)
 	if resultDb.Error != nil {
@@ -176,7 +174,7 @@ func TestSelectTablePage(t *testing.T) {
 		Dept  string
 		Count string
 	}
-	q := gplus.NewQuery[User]()
+	q, _ := gplus.NewQuery[User]()
 	q.Group(UserColumn.Dept).Select(UserColumn.Dept, "count(*) as count")
 	page := gplus.NewPage[deptCount](1, 2)
 	pageResult, resultDb := gplus.SelectPageModel[User, deptCount](page, q)
@@ -191,7 +189,7 @@ func TestSelectTablePage(t *testing.T) {
 }
 
 func TestSelectCount(t *testing.T) {
-	q := gplus.NewQuery[User]()
+	q, _ := gplus.NewQuery[User]()
 	q.Eq(UserColumn.Age, 18)
 	count, resultDb := gplus.SelectCount(q)
 	if resultDb.Error != nil {

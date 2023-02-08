@@ -33,7 +33,7 @@ func TestUpdateById(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	q := gplus.NewQuery[User]()
+	q, _ := gplus.NewQuery[User]()
 	q.Eq(UserColumn.Username, "zhangsan").Set(UserColumn.Dept, "相关部门123123").
 		Set(UserColumn.Phone, 12312)
 	result := gplus.Update(q)

@@ -32,7 +32,7 @@ func TestGetById(t *testing.T) {
 }
 
 func TestGetByOne(t *testing.T) {
-	query := gplus.NewQuery[User]()
+	query, _ := gplus.NewQuery[User]()
 	query.Eq(UserColumn.Username, "zhangsan1")
 	user, resultDb := userDao.GetOne(query)
 	fmt.Println("RowsAffected:", resultDb.RowsAffected)
@@ -50,7 +50,7 @@ func TestListAll(t *testing.T) {
 }
 
 func TestList(t *testing.T) {
-	query := gplus.NewQuery[User]()
+	query, _ := gplus.NewQuery[User]()
 	query.Eq(UserColumn.Username, "zhangsan1")
 	users, resultDb := userDao.List(query)
 	fmt.Println("RowsAffected:", resultDb.RowsAffected)
@@ -73,7 +73,7 @@ func TestPageAll(t *testing.T) {
 
 func TestPage(t *testing.T) {
 	page := gplus.NewPage[User](1, 2)
-	query := gplus.NewQuery[User]()
+	query, _ := gplus.NewQuery[User]()
 	query.Eq(UserColumn.Username, "zhangsan1")
 	page, resultDb := userDao.Page(page, query)
 	fmt.Println("page total:", page.Total)

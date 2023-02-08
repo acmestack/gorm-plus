@@ -74,7 +74,7 @@ func DeleteById[T any](id any) *gorm.DB {
 }
 
 func DeleteByIds[T any](ids any) *gorm.DB {
-	q := NewQuery[T]()
+	q, _ := NewQuery[T]()
 	q.In(getPKColumn[T](), ids)
 	resultDb := Delete[T](q)
 	return resultDb
@@ -97,7 +97,7 @@ func Update[T any](q *Query[T]) *gorm.DB {
 }
 
 func SelectById[T any](id any) (*T, *gorm.DB) {
-	q := NewQuery[T]()
+	q, _ := NewQuery[T]()
 	q.Eq(getPKColumn[T](), id)
 	var entity T
 	resultDb := buildCondition(q)
@@ -105,7 +105,7 @@ func SelectById[T any](id any) (*T, *gorm.DB) {
 }
 
 func SelectByIds[T any](ids any) ([]*T, *gorm.DB) {
-	q := NewQuery[T]()
+	q, _ := NewQuery[T]()
 	q.In(getPKColumn[T](), ids)
 	return SelectList[T](q)
 }

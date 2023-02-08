@@ -173,8 +173,18 @@ func (q *Query[T]) OrBracket(bracketQuery *Query[T]) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) Select(columns ...string) *Query[T] {
-	q.SelectColumns = append(q.SelectColumns, columns...)
+func (q *Query[T]) Select(columns ...any) *Query[T] {
+	for _, v := range columns {
+		valueOf := reflect.ValueOf(v)
+		switch valueOf.Kind() {
+		case reflect.String:
+			columnStr := v.(string)
+			q.SelectColumns = append(q.SelectColumns, columnStr)
+		case reflect.Pointer:
+			columnName := q.ColumnNameMap[valueOf.Pointer()]
+			q.SelectColumns = append(q.SelectColumns, columnName)
+		}
+	}
 	return q
 }
 
@@ -188,12 +198,13 @@ func (q *Query[T]) OrderByAsc(columns ...string) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) Group(columns ...string) *Query[T] {
+func (q *Query[T]) Group(columns ...any) *Query[T] {
 	for _, v := range columns {
+		columnName := q.ColumnNameMap[reflect.ValueOf(v).Pointer()]
 		if q.GroupBuilder.Len() > 0 {
 			q.GroupBuilder.WriteString(constants.Comma)
 		}
-		q.GroupBuilder.WriteString(v)
+		q.GroupBuilder.WriteString(columnName)
 	}
 	return q
 }

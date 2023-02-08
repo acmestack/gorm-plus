@@ -123,8 +123,8 @@ func TestSelectList(t *testing.T) {
 
 func TestSelectBracketList(t *testing.T) {
 	q, model := gplus.NewQuery[User]()
-	bracketQuery, _ := gplus.NewQuery[User]()
-	bracketQuery.Eq(&model.Address, "上海").Or().Eq(&model.Address, "北京")
+	bracketQuery, bracketModel := gplus.NewQuery[User]()
+	bracketQuery.Eq(&bracketModel.Address, "上海").Or().Eq(&bracketModel.Address, "北京")
 
 	q.Eq(&model.Username, "zhangsan").AndBracket(bracketQuery)
 	users, resultDb := gplus.SelectList(q)
@@ -142,8 +142,8 @@ func TestSelectTableList(t *testing.T) {
 		Dept  string
 		Count string
 	}
-	q, _ := gplus.NewQuery[User]()
-	q.Group(UserColumn.Dept).Select(UserColumn.Dept, "count(*) as count")
+	q, model := gplus.NewQuery[User]()
+	q.Group(&model.Dept).Select(&model.Dept, "count(*) as count")
 	users, resultDb := gplus.SelectListModel[User, deptCount](q)
 	if resultDb.Error != nil {
 		log.Fatalln("error:", resultDb.Error)

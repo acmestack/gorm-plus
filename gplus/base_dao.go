@@ -18,6 +18,7 @@
 package gplus
 
 import (
+	"fmt"
 	"github.com/acmestack/gorm-plus/constants"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -69,13 +70,13 @@ func InsertBatchSize[T any](entities []*T, batchSize int) *gorm.DB {
 
 func DeleteById[T any](id any) *gorm.DB {
 	var entity T
-	resultDb := gormDb.Where(getPKColumn[T](), id).Delete(&entity)
+	resultDb := gormDb.Where(getPKColumnName[T](), id).Delete(&entity)
 	return resultDb
 }
 
 func DeleteByIds[T any](ids any) *gorm.DB {
 	q, _ := NewQuery[T]()
-	q.In(getPKColumn[T](), ids)
+	q.In(getPKColumnName[T](), ids)
 	resultDb := Delete[T](q)
 	return resultDb
 }
@@ -86,8 +87,8 @@ func Delete[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-func UpdateById[T any](entity *T, id any) *gorm.DB {
-	resultDb := gormDb.Model(&entity).Where(getPKColumn[T](), id).Updates(entity)
+func UpdateById[T any](entity *T) *gorm.DB {
+	resultDb := gormDb.Model(&entity).Where(getPKColumnName[T](), getPKColumnValue(entity)).Updates(entity)
 	return resultDb
 }
 
@@ -98,7 +99,7 @@ func Update[T any](q *Query[T]) *gorm.DB {
 
 func SelectById[T any](id any) (*T, *gorm.DB) {
 	q, _ := NewQuery[T]()
-	q.Eq(getPKColumn[T](), id)
+	q.Eq(getPKColumnName[T](), id)
 	var entity T
 	resultDb := buildCondition(q)
 	return &entity, resultDb.Limit(1).Find(&entity)
@@ -106,7 +107,7 @@ func SelectById[T any](id any) (*T, *gorm.DB) {
 
 func SelectByIds[T any](ids any) ([]*T, *gorm.DB) {
 	q, _ := NewQuery[T]()
-	q.In(getPKColumn[T](), ids)
+	q.In(getPKColumnName[T](), ids)
 	return SelectList[T](q)
 }
 
@@ -219,8 +220,7 @@ func buildCondition[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
-// getPKColumn
-func getPKColumn[T any]() string {
+func getPKColumnName[T any]() string {
 	var entity T
 	entityType := reflect.TypeOf(entity)
 	numField := entityType.NumField()
@@ -243,4 +243,23 @@ func getPKColumn[T any]() string {
 		return constants.DefaultPrimaryName
 	}
 	return columnName
+}
+
+func getPKColumnValue(entity any) string {
+	entityValue := reflect.ValueOf(entity)
+	entityValue = reflect.Indirect(entityValue)
+	entityType := reflect.Indirect(entityValue).Type()
+	numField := entityType.NumField()
+	var primaryKeyValue reflect.Value
+	for i := 0; i < numField; i++ {
+		field := entityType.Field(i)
+		tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
+		isPrimaryKey := utils.CheckTruth(tagSetting["PRIMARYKEY"], tagSetting["PRIMARY_KEY"])
+		if isPrimaryKey {
+			primaryKeyValue = entityValue.Field(i)
+			break
+		}
+	}
+	id := fmt.Sprintf("%v", primaryKeyValue)
+	return id
 }

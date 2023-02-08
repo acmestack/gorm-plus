@@ -55,8 +55,8 @@ func (service CommonDao[T]) Remove(q *Query[T]) *gorm.DB {
 	return Delete[T](q)
 }
 
-func (service CommonDao[T]) UpdateById(entity *T, id any) *gorm.DB {
-	return UpdateById[T](entity, id)
+func (service CommonDao[T]) UpdateById(entity *T) *gorm.DB {
+	return UpdateById[T](entity)
 }
 
 func (service CommonDao[T]) Update(q *Query[T]) *gorm.DB {

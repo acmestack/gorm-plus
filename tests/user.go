@@ -21,8 +21,6 @@ import (
 	"time"
 )
 
-// +gplus:column=true
-
 type User struct {
 	ID        int64
 	Username  string `gorm:"column:username"`

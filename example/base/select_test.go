@@ -93,7 +93,7 @@ func TestSelectOne1(t *testing.T) {
 func TestSelectOne2(t *testing.T) {
 	q, model := gplus.NewQuery[User]()
 	q.Eq(&model.Username, "zhangsan").
-		Select(UserColumn.Username, UserColumn.Password)
+		Select(&model.Username, &model.Password)
 	user, resultDb := gplus.SelectOne(q)
 
 	if resultDb.Error != nil {
@@ -175,7 +175,7 @@ func TestSelectTablePage(t *testing.T) {
 		Count string
 	}
 	q, model := gplus.NewQuery[User]()
-	q.Group(&model.Dept).Select(UserColumn.Dept, "count(*) as count")
+	q.Group(&model.Dept).Select(&model.Dept, "count(*) as count")
 	page := gplus.NewPage[deptCount](1, 2)
 	pageResult, resultDb := gplus.SelectPageModel[User, deptCount](page, q)
 	if resultDb.Error != nil {

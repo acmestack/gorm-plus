@@ -18,7 +18,6 @@
 package gplus
 
 import (
-	"fmt"
 	"github.com/acmestack/gorm-plus/constants"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -88,7 +87,7 @@ func Delete[T any](q *Query[T]) *gorm.DB {
 }
 
 func UpdateById[T any](entity *T) *gorm.DB {
-	resultDb := gormDb.Model(&entity).Where(getPkColumnName[T](), getPkColumnValue(entity)).Updates(entity)
+	resultDb := gormDb.Model(entity).Updates(entity)
 	return resultDb
 }
 
@@ -243,23 +242,4 @@ func getPkColumnName[T any]() string {
 		return constants.DefaultPrimaryName
 	}
 	return columnName
-}
-
-func getPkColumnValue(entity any) string {
-	entityValue := reflect.ValueOf(entity)
-	entityValue = reflect.Indirect(entityValue)
-	entityType := reflect.Indirect(entityValue).Type()
-	numField := entityType.NumField()
-	var primaryKeyValue reflect.Value
-	for i := 0; i < numField; i++ {
-		field := entityType.Field(i)
-		tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
-		isPrimaryKey := utils.CheckTruth(tagSetting["PRIMARYKEY"], tagSetting["PRIMARY_KEY"])
-		if isPrimaryKey {
-			primaryKeyValue = entityValue.Field(i)
-			break
-		}
-	}
-	id := fmt.Sprintf("%v", primaryKeyValue)
-	return id
 }

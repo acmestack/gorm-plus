@@ -86,3 +86,188 @@ func main() {
 }
 ```
 
+## 使用
+
+### 下载
+
+通过以下命令安装使用：
+
+~~~go
+go get github.com/acmestack/gorm-plus
+~~~
+
+
+
+### 定义表结构
+
+~~~go
+type Student struct {
+	ID        int
+	Name      string
+	Age       uint8
+	Email     string
+	Birthday  time.Time
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+~~~
+
+
+
+### 连接数据库
+
+~~~go
+var gormDb *gorm.DB
+
+func init() {
+	dsn := "root:root-abcd-1234@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
+	var err error
+	gormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
+	if err != nil {
+		log.Println(err)
+	}
+	gplus.Init(gormDb)
+}
+~~~
+
+
+
+### 自动迁移
+
+~~~go
+	var student Student
+	// 自动迁移
+	gormDb.AutoMigrate(student)
+~~~
+
+
+
+### 基础增删改查
+
+##### 插入一条数据
+
+~~~go
+	studentItem := Student{Name: "zhangsan", Age: 18, Email: "123@11.com", Birthday: time.Now()}
+	gplus.Insert(&studentItem)
+~~~
+
+##### 插入多条数据
+
+~~~go
+	student1 := Student{Name: "zhangsan1", Age: 18, Email: "123@11.com", Birthday: time.Now()}
+	student2 := Student{Name: "zhangsan2", Age: 18, Email: "123@11.com", Birthday: time.Now()}
+	var students = []*Student{&student1, &student2}
+	gplus.InsertBatch[Student](students)
+~~~
+
+##### 分批插入数据
+
+~~~go
+	student1 := Student{Name: "zhangsan1", Age: 18, Email: "123@11.com", Birthday: time.Now()}
+	student2 := Student{Name: "zhangsan2", Age: 18, Email: "123@11.com", Birthday: time.Now()}
+	student3 := Student{Name: "zhangsan3", Age: 18, Email: "123@11.com", Birthday: time.Now()}
+	student4 := Student{Name: "zhangsan4", Age: 18, Email: "123@11.com", Birthday: time.Now()}
+	var students = []*Student{&student1, &student2, &student3, &student4}
+	// 每次插入2条数据
+	gplus.InsertBatchSize[Student](students, 2)
+~~~
+
+##### 根据一个ID查询
+
+~~~go
+	student, resultDb := gplus.SelectById[Student](2)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+	log.Printf("student:%+v\n", student)
+~~~
+
+
+
+##### 根据多个ID查询
+
+~~~go
+	var ids = []int{2, 3}
+	students, resultDb := gplus.SelectByIds[Student](ids)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+	for _, student := range students {
+		log.Printf("student:%+v\n", student)
+	}
+~~~
+
+
+
+##### 根据条件查询一条数据
+~~~go
+	query, model := gplus.NewQuery[Student]()
+	query.Eq(&model.Name, "zhangsan")
+	student, resultDb := gplus.SelectOne(query)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+	log.Printf("student:%v\n", student)
+~~~
+
+##### 根据条件查询多条数据
+~~~go
+	query, model := gplus.NewQuery[Student]()
+	query.Eq(&model.Name, "zhangsan")
+	students, resultDb := gplus.SelectList(query)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+	for _, student := range students {
+		log.Printf("student:%v\n", student)
+	}
+~~~
+
+##### 根据条件查询多条数据（泛型封装）
+~~~go
+	type StudentVo struct {
+		Name string
+		Age  int
+	}
+	query, model := gplus.NewQuery[Student]()
+	query.Eq(&model.Name, "zhangsan")
+	students, resultDb := gplus.SelectListModel[Student, StudentVo](query)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+	for _, student := range students {
+		log.Printf("student:%v\n", student)
+	}
+~~~
+##### 根据条件分页查询
+~~~go
+	query, model := gplus.NewQuery[Student]()
+	page := gplus.NewPage[Student](1, 5)
+	query.Eq(&model.Name, "zhangsan")
+	page, resultDb := gplus.SelectPage(page, query)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+	log.Printf("total:%v\n", page.Total)
+	log.Printf("current:%v\n", page.Current)
+	log.Printf("size:%v\n", page.Size)
+	for _, student := range page.Records {
+		log.Printf("student:%v\n", student)
+	}
+~~~
+
+##### 根据条件分页查询（泛型封装）
+~~~go
+	type StudentVo struct {
+		Name string
+		Age  int
+	}
+	query, model := gplus.NewQuery[Student]()
+	page := gplus.NewPage[StudentVo](1, 5)
+	query.Eq(&model.Name, "zhangsan")
+	page, resultDb := gplus.SelectPageModel[Student, StudentVo](page, query)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+	log.Printf("total:%v\n", page.Total)
+	log.Printf("current:%v\n", page.Current)
+	log.Printf("size:%v\n", page.Size)
+	for _, student := range page.Records {
+		log.Printf("student:%v\n", student)
+	}
+~~~

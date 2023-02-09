@@ -308,4 +308,5 @@ func init() {
 	resultDb := gplus.Delete(query)
 	log.Printf("error:%v\n", resultDb.Error)
 	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+=======
 ~~~

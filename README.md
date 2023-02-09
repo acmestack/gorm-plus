@@ -1,4 +1,5 @@
 # Gorm-plus
+
 Gorm-plus是基于Gorm的增强版，类似Mybatis-plus语法。
 ## 特性
 - [x] 无侵入：只做增强不做改变
@@ -272,4 +273,41 @@ func init() {
 	for _, student := range page.Records {
 		log.Printf("student:%v\n", student)
 	}
+~~~
+##### 根据ID更新
+~~~go
+	student := Student{ID: 3, Name: "lisi"}
+	student.Name = "lisi"
+	resultDb := gplus.UpdateById[Student](&student)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+~~~
+##### 根据条件更新
+~~~go
+	query, model := gplus.NewQuery[Student]()
+	query.Eq(&model.Name, "zhangsan").Set(&model.Age, 30)
+	resultDb := gplus.Update[Student](query)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+~~~
+##### 根据ID删除
+~~~go
+	resultDb := gplus.DeleteById[Student](4)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+~~~
+##### 根据多个ID删除
+~~~go
+	var ids = []int{5, 6}
+	resultDb := gplus.DeleteByIds[Student](ids)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+~~~
+##### 根据条件删除
+~~~go
+	query, model := gplus.NewQuery[Student]()
+	query.Eq(&model.Name, "lisi")
+	resultDb := gplus.Delete(query)
+	log.Printf("error:%v\n", resultDb.Error)
+	log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
 ~~~

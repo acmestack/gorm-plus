@@ -188,19 +188,29 @@ func (q *Query[T]) Select(columns ...any) *Query[T] {
 	return q
 }
 
-func (q *Query[T]) OrderByDesc(columns ...string) *Query[T] {
-	q.buildOrder(constants.Desc, columns...)
+func (q *Query[T]) OrderByDesc(columns ...any) *Query[T] {
+	var columnNames []string
+	for _, v := range columns {
+		columnName := q.getColumnName(v)
+		columnNames = append(columnNames, columnName)
+	}
+	q.buildOrder(constants.Desc, columnNames...)
 	return q
 }
 
-func (q *Query[T]) OrderByAsc(columns ...string) *Query[T] {
-	q.buildOrder(constants.Asc, columns...)
+func (q *Query[T]) OrderByAsc(columns ...any) *Query[T] {
+	var columnNames []string
+	for _, v := range columns {
+		columnName := q.getColumnName(v)
+		columnNames = append(columnNames, columnName)
+	}
+	q.buildOrder(constants.Asc, columnNames...)
 	return q
 }
 
 func (q *Query[T]) Group(columns ...any) *Query[T] {
 	for _, v := range columns {
-		columnName := q.ColumnNameMap[reflect.ValueOf(v).Pointer()]
+		columnName := q.getColumnName(v)
 		if q.GroupBuilder.Len() > 0 {
 			q.GroupBuilder.WriteString(constants.Comma)
 		}

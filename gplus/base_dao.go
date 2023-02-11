@@ -86,6 +86,16 @@ func Delete[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
+func DeleteByMap[T any](q *Query[T]) *gorm.DB {
+	for k, v := range q.ConditionMap {
+		columnName := q.getColumnName(k)
+		q.Eq(columnName, v)
+	}
+	var entity T
+	resultDb := gormDb.Where(q.QueryBuilder.String(), q.QueryArgs...).Delete(&entity)
+	return resultDb
+}
+
 func UpdateById[T any](entity *T) *gorm.DB {
 	resultDb := gormDb.Model(entity).Updates(entity)
 	return resultDb

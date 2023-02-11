@@ -41,10 +41,17 @@ type Query[T any] struct {
 	LastCond          string
 	UpdateMap         map[string]any
 	ColumnNameMap     map[uintptr]string
+	ConditionMap      map[any]any
 }
 
 func NewQuery[T any]() (*Query[T], *T) {
 	q := &Query[T]{}
+	return q, q.buildColumnNameMap()
+}
+
+func NewQueryMap[T any]() (*Query[T], *T) {
+	q := &Query[T]{}
+	q.ConditionMap = make(map[any]any)
 	return q, q.buildColumnNameMap()
 }
 

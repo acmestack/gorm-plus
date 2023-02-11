@@ -130,6 +130,20 @@ func SelectListModel[T any, R any](q *Query[T]) ([]*R, *gorm.DB) {
 	return results, resultDb
 }
 
+func SelectListByMap[T any](q *Query[T]) ([]*T, *gorm.DB) {
+	resultDb := buildCondition(q)
+	var results []*T
+	resultDb.Find(&results)
+	return results, resultDb
+}
+
+func SelectListMaps[T any](q *Query[T]) ([]map[string]any, *gorm.DB) {
+	resultDb := buildCondition(q)
+	var results []map[string]any
+	resultDb.Find(&results)
+	return results, resultDb
+}
+
 func SelectPage[T any](page *Page[T], q *Query[T]) (*Page[T], *gorm.DB) {
 	total, countDb := SelectCount[T](q)
 	if countDb.Error != nil {
@@ -202,6 +216,15 @@ func buildCondition[T any](q *Query[T]) *gorm.DB {
 			}
 
 			resultDb.Where(q.QueryBuilder.String(), q.QueryArgs...)
+		}
+
+		if len(q.ConditionMap) > 0 {
+			var condMap = make(map[string]any)
+			for k, v := range q.ConditionMap {
+				columnName := q.getColumnName(k)
+				condMap[columnName] = v
+			}
+			resultDb.Where(condMap)
 		}
 
 		if q.OrderBuilder.Len() > 0 {

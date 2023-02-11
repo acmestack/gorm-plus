@@ -180,6 +180,21 @@ func SelectPageModel[T any, R any](page *Page[R], q *Query[T]) (*Page[R], *gorm.
 	return page, resultDb
 }
 
+func SelectPageMaps[T any](page *Page[map[string]any], q *Query[T]) (*Page[map[string]any], *gorm.DB) {
+	total, countDb := SelectCount[T](q)
+	if countDb.Error != nil {
+		return page, countDb
+	}
+	page.Total = total
+	resultDb := buildCondition(q)
+	var results []map[string]any
+	resultDb.Scopes(paginate(page)).Find(&results)
+	for _, m := range results {
+		page.Records = append(page.Records, &m)
+	}
+	return page, resultDb
+}
+
 func SelectCount[T any](q *Query[T]) (int64, *gorm.DB) {
 	var count int64
 	resultDb := buildCondition(q)

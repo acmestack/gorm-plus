@@ -86,6 +86,16 @@ func Delete[T any](q *Query[T]) *gorm.DB {
 	return resultDb
 }
 
+func DeleteByMap[T any](q *Query[T]) *gorm.DB {
+	for k, v := range q.ConditionMap {
+		columnName := q.getColumnName(k)
+		q.Eq(columnName, v)
+	}
+	var entity T
+	resultDb := gormDb.Where(q.QueryBuilder.String(), q.QueryArgs...).Delete(&entity)
+	return resultDb
+}
+
 func UpdateById[T any](entity *T) *gorm.DB {
 	resultDb := gormDb.Model(entity).Updates(entity)
 	return resultDb
@@ -130,6 +140,20 @@ func SelectListModel[T any, R any](q *Query[T]) ([]*R, *gorm.DB) {
 	return results, resultDb
 }
 
+func SelectListByMap[T any](q *Query[T]) ([]*T, *gorm.DB) {
+	resultDb := buildCondition(q)
+	var results []*T
+	resultDb.Find(&results)
+	return results, resultDb
+}
+
+func SelectListMaps[T any](q *Query[T]) ([]map[string]any, *gorm.DB) {
+	resultDb := buildCondition(q)
+	var results []map[string]any
+	resultDb.Find(&results)
+	return results, resultDb
+}
+
 func SelectPage[T any](page *Page[T], q *Query[T]) (*Page[T], *gorm.DB) {
 	total, countDb := SelectCount[T](q)
 	if countDb.Error != nil {
@@ -153,6 +177,21 @@ func SelectPageModel[T any, R any](page *Page[R], q *Query[T]) (*Page[R], *gorm.
 	var results []*R
 	resultDb.Scopes(paginate(page)).Scan(&results)
 	page.Records = results
+	return page, resultDb
+}
+
+func SelectPageMaps[T any](page *Page[map[string]any], q *Query[T]) (*Page[map[string]any], *gorm.DB) {
+	total, countDb := SelectCount[T](q)
+	if countDb.Error != nil {
+		return page, countDb
+	}
+	page.Total = total
+	resultDb := buildCondition(q)
+	var results []map[string]any
+	resultDb.Scopes(paginate(page)).Find(&results)
+	for _, m := range results {
+		page.Records = append(page.Records, &m)
+	}
 	return page, resultDb
 }
 
@@ -202,6 +241,15 @@ func buildCondition[T any](q *Query[T]) *gorm.DB {
 			}
 
 			resultDb.Where(q.QueryBuilder.String(), q.QueryArgs...)
+		}
+
+		if len(q.ConditionMap) > 0 {
+			var condMap = make(map[string]any)
+			for k, v := range q.ConditionMap {
+				columnName := q.getColumnName(k)
+				condMap[columnName] = v
+			}
+			resultDb.Where(condMap)
 		}
 
 		if q.OrderBuilder.Len() > 0 {

@@ -317,108 +317,6 @@ log.Printf("error:%v\n", resultDb.Error)
 log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
 ```
 
-
-
-### 通用查询
-
-gplus提供通用的CRUD操作，只需要在struct中嵌入` gplus.CommonDao`即可使用gplus提供的所有CRUD操作。
-
-```Go
-type StudentDao struct {
-  gplus.CommonDao[Student]
-}
-
-var studentDao = &StudentDao{}
-```
-
-
-
-#### 根据ID查询
-
-```Go
-  student, resultDb := studentDao.GetById(2)
-  log.Printf("error:%+v", resultDb.Error)
-  log.Printf("RowsAffected:%+v", resultDb.RowsAffected)
-  log.Printf("student:%+v", student)
-```
-
-
-
-#### 根据条件查询一条数据
-
-```Go
-  query, model := gplus.NewQuery[Student]()
-  query.Eq(&model.Name, "zhangsan1")
-  student, resultDb := studentDao.GetOne(query)
-  log.Printf("error:%+v", resultDb.Error)
-  log.Printf("RowsAffected:%+v", resultDb.RowsAffected)
-  log.Printf("student:%+v", student)
-```
-
-
-
-#### 查询列表所有数据
-
-```Go
-  students, resultDb := studentDao.ListAll()
-  log.Printf("error:%+v", resultDb.Error)
-  fmt.Println("RowsAffected:", resultDb.RowsAffected)
-  for _, student := range students {
-    log.Printf("student:%+v", student)
-  }
-```
-
-
-
-#### 根据条件查询数据
-
-```Go
-  query, model := gplus.NewQuery[Student]()
-  query.Eq(&model.Name, "zhangsan1")
-  students, resultDb := studentDao.List(query)
-  log.Printf("error:%+v", resultDb.Error)
-  fmt.Println("RowsAffected:", resultDb.RowsAffected)
-  for _, student := range students {
-    log.Printf("student:%+v", student)
-  }
-```
-
-
-
-#### 分页查询所有数据
-
-```Go
-  page := gplus.NewPage[Student](1, 2)
-  page, resultDb := studentDao.PageAll(page)
-  log.Printf("error:%+v", resultDb.Error)
-  fmt.Println("RowsAffected:", resultDb.RowsAffected)
-  for _, student := range page.Records {
-    log.Printf("student:%+v", student)
-  }
-```
-
-
-
-#### 分页条件查询数据
-
-```Go
-  page := gplus.NewPage[Student](1, 2)
-  query, model := gplus.NewQuery[Student]()
-  query.Eq(&model.Name, "zhangsan1")
-  page, resultDb := studentDao.Page(page, query)
-  log.Printf("error:%+v", resultDb.Error)
-  fmt.Println("RowsAffected:", resultDb.RowsAffected)
-  for _, student := range page.Records {
-    log.Printf("student:%+v", student)
-  }
-```
-
-
-
-
-
-
-
 ### 高级查询
 
 #### 条件构造器
@@ -458,7 +356,42 @@ gorm-plus 提供了强大的条件构造器,通过构造器能够组合不同的
   log.Printf("studentResult:%+v\n", studentResult)
 ```
 
+#### Query泛型简化
 
+如果不希望每次创建Query对象的时候携带上泛型，我们可以提供一个全局的泛型Dao。
+
+```Go
+var dao gplus.Dao[Student]
+func main() {
+	query, model := dao.NewQuery()
+	query.Eq(&model.Name, "zhangsan")
+	list, resultDb := gplus.SelectList(query)
+	fmt.Println(resultDb.RowsAffected)
+	for _, v := range list {
+		marshal, _ := json.Marshal(v)
+		fmt.Println(string(marshal))
+	}
+}
+```
+
+我们也可以把`gplus.Dao`组合到我们自己定义的Dao对象中
+
+```Go
+type StudentDao struct {
+	gplus.Dao[Student]
+}
+var studentDao StudentDao
+func main() {
+	query, model := studentDao.NewQuery()
+	query.Eq(&model.Name, "zhangsan")
+	list, resultDb := gplus.SelectList(query)
+	fmt.Println(resultDb.RowsAffected)
+	for _, v := range list {
+		marshal, _ := json.Marshal(v)
+		fmt.Println(string(marshal))
+	}
+}
+```
 
 #### 查询指定字段
 

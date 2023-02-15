@@ -55,6 +55,10 @@ func (service CommonDao[T]) Remove(q *Query[T], dbs ...*gorm.DB) *gorm.DB {
 	return Delete[T](q, dbs...)
 }
 
+func (service CommonDao[T]) RemoveByMap(q *Query[T], dbs ...*gorm.DB) *gorm.DB {
+	return DeleteByMap[T](q, dbs...)
+}
+
 func (service CommonDao[T]) UpdateById(entity *T, dbs ...*gorm.DB) *gorm.DB {
 	return UpdateById[T](entity, dbs...)
 }
@@ -83,12 +87,24 @@ func (service CommonDao[T]) ListByIds(ids any, dbs ...*gorm.DB) ([]*T, *gorm.DB)
 	return SelectByIds[T](ids, dbs...)
 }
 
+func (service CommonDao[T]) ListByMap(q *Query[T], dbs ...*gorm.DB) ([]*T, *gorm.DB) {
+	return SelectListByMap[T](q, dbs...)
+}
+
+func (service CommonDao[T]) ListMaps(q *Query[T], dbs ...*gorm.DB) ([]map[string]any, *gorm.DB) {
+	return SelectListMaps[T](q, dbs...)
+}
+
 func (service CommonDao[T]) PageAll(page *Page[T], dbs ...*gorm.DB) (*Page[T], *gorm.DB) {
 	return SelectPage[T](page, nil, dbs...)
 }
 
 func (service CommonDao[T]) Page(page *Page[T], q *Query[T], dbs ...*gorm.DB) (*Page[T], *gorm.DB) {
 	return SelectPage[T](page, q, dbs...)
+}
+
+func (service CommonDao[T]) PageMaps(page *Page[map[string]any], q *Query[T], dbs ...*gorm.DB) (*Page[map[string]any], *gorm.DB) {
+	return SelectPageMaps[T](page, q, dbs...)
 }
 
 func (service CommonDao[T]) CountAll(dbs ...*gorm.DB) (int64, *gorm.DB) {

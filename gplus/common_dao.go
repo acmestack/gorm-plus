@@ -28,7 +28,7 @@ func NewCommonDao[T any]() *CommonDao[T] {
 }
 
 func (service CommonDao[T]) Db() *gorm.DB {
-	return gormDb
+	return globalDb
 }
 
 func (service CommonDao[T]) Save(entity *T) *gorm.DB {

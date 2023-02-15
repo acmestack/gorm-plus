@@ -50,6 +50,8 @@ type Test1 struct {
 }
 
 func TestInsert(t *testing.T) {
+	var u User
+	gormDb.AutoMigrate(u)
 	user := &User{Username: "user1", Password: "123456", Age: 18, Score: 100, Dept: "财务部门"}
 	result := gplus.Insert(user)
 	if result.Error != nil {

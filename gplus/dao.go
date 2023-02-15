@@ -39,6 +39,13 @@ type Page[T any] struct {
 	Records []*T
 }
 
+type Dao[T any] struct{}
+
+func (dao Dao[T]) NewQuery() (*Query[T], *T) {
+	q := &Query[T]{}
+	return q, q.buildColumnNameMap()
+}
+
 func NewPage[T any](current, size int) *Page[T] {
 	return &Page[T]{Current: current, Size: size}
 }

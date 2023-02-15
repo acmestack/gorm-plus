@@ -43,12 +43,6 @@ func init() {
 	gplus.Init(gormDb)
 }
 
-type Test1 struct {
-	gorm.Model
-	Code  string
-	Price uint
-}
-
 func TestInsert(t *testing.T) {
 	var u User
 	gormDb.AutoMigrate(u)

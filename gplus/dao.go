@@ -175,7 +175,7 @@ func SelectPage[T any](page *Page[T], q *Query[T], dbs ...*gorm.DB) (*Page[T], *
 		return page, countDb
 	}
 	page.Total = total
-	resultDb := buildCondition(q)
+	resultDb := buildCondition(q, dbs...)
 	var results []*T
 	resultDb.Scopes(paginate(page)).Find(&results)
 	page.Records = results
@@ -188,7 +188,7 @@ func SelectPageModel[T any, R any](page *Page[R], q *Query[T], dbs ...*gorm.DB) 
 		return page, countDb
 	}
 	page.Total = total
-	resultDb := buildCondition(q)
+	resultDb := buildCondition(q, dbs...)
 	var results []*R
 	resultDb.Scopes(paginate(page)).Scan(&results)
 	page.Records = results
@@ -201,7 +201,7 @@ func SelectPageMaps[T any](page *Page[map[string]any], q *Query[T], dbs ...*gorm
 		return page, countDb
 	}
 	page.Total = total
-	resultDb := buildCondition(q)
+	resultDb := buildCondition(q, dbs...)
 	var results []map[string]any
 	resultDb.Scopes(paginate(page)).Find(&results)
 	for _, m := range results {

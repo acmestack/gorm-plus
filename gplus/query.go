@@ -19,11 +19,16 @@ package gplus
 
 import (
 	"fmt"
-	"github.com/acmestack/gorm-plus/constants"
-	"gorm.io/gorm/schema"
 	"reflect"
 	"strings"
+	"sync"
+
+	"github.com/acmestack/gorm-plus/constants"
+	"gorm.io/gorm/schema"
 )
+
+var columnNameMapCache sync.Map
+var modelInstanceCache sync.Map
 
 type Query[T any] struct {
 	SelectColumns     []string
@@ -270,6 +275,15 @@ func (q *Query[T]) buildOrder(orderType string, columns ...string) {
 }
 
 func (q *Query[T]) buildColumnNameMap() *T {
+	// first try to load from cache
+	modelType := reflect.TypeOf((*T)(nil)).Elem().String()
+	if model, ok := modelInstanceCache.Load(modelType); ok {
+		if cachedColumnNameMap, ok := columnNameMapCache.Load(modelType); ok {
+			q.ColumnNameMap = cachedColumnNameMap.(map[uintptr]string)
+			return model.(*T)
+		}
+	}
+
 	q.ColumnNameMap = make(map[uintptr]string)
 	model := new(T)
 	valueOf := reflect.ValueOf(model)
@@ -287,6 +301,11 @@ func (q *Query[T]) buildColumnNameMap() *T {
 			q.ColumnNameMap[pointer] = name
 		}
 	}
+
+	// store to cache
+	modelInstanceCache.Store(modelType, model)
+	columnNameMapCache.Store(modelType, q.ColumnNameMap)
+
 	return model
 }
 

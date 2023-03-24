@@ -18,11 +18,13 @@
 package gplus
 
 import (
+	"database/sql"
+	"reflect"
+
 	"github.com/acmestack/gorm-plus/constants"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"gorm.io/gorm/utils"
-	"reflect"
 )
 
 var globalDb *gorm.DB
@@ -139,6 +141,11 @@ func SelectOne[T any](q *Query[T], dbs ...*gorm.DB) (*T, *gorm.DB) {
 	var entity T
 	resultDb := buildCondition(q, dbs...)
 	return &entity, resultDb.Limit(1).Find(&entity)
+}
+
+func Exists[T any](q *Query[T], dbs ...*gorm.DB) (bool, error) {
+	_, dbRes := SelectOne[T](q, dbs...)
+	return dbRes.RowsAffected > 0, dbRes.Error
 }
 
 func SelectList[T any](q *Query[T], dbs ...*gorm.DB) ([]*T, *gorm.DB) {
@@ -314,4 +321,9 @@ func getDb(dbs ...*gorm.DB) *gorm.DB {
 		return db
 	}
 	return globalDb
+}
+
+func Begin(opts ...*sql.TxOptions) *gorm.DB {
+	db := getDb()
+	return db.Begin(opts...)
 }

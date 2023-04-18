@@ -12,7 +12,7 @@ Gorm-plus是基于Gorm的增强版，类似Mybatis-plus语法。
 - [x] 支持主键自动生成
 - [x] 内置分页插件
 
-## 事务
+## 事务（未发版）
 - 在需要事务的场景，可以使用gplus.Begin()开启事务，获取*gorm.DB
 - 所有的dao方法，均支持传入*gorm.DB，后续的操作均以传入的为准
 
@@ -420,7 +420,7 @@ for _, student := range students {
 }
 ```
 
-#### 事务
+#### 事务（未发版）
 
 ```Go
 // 开启事务

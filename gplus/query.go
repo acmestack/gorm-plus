@@ -276,37 +276,52 @@ func (q *Query[T]) buildOrder(orderType string, columns ...string) {
 
 func (q *Query[T]) buildColumnNameMap() *T {
 	// first try to load from cache
-	modelType := reflect.TypeOf((*T)(nil)).Elem().String()
-	if model, ok := modelInstanceCache.Load(modelType); ok {
-		if cachedColumnNameMap, ok := columnNameMapCache.Load(modelType); ok {
+	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
+	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
+		if cachedColumnNameMap, ok := columnNameMapCache.Load(modelTypeStr); ok {
 			q.ColumnNameMap = cachedColumnNameMap.(map[uintptr]string)
 			return model.(*T)
 		}
 	}
-
 	q.ColumnNameMap = make(map[uintptr]string)
 	model := new(T)
 	valueOf := reflect.ValueOf(model)
 	typeOf := reflect.TypeOf(model)
+
 	for i := 0; i < valueOf.Elem().NumField(); i++ {
-		pointer := valueOf.Elem().Field(i).Addr().Pointer()
 		field := typeOf.Elem().Field(i)
-		tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
-		name, ok := tagSetting["COLUMN"]
-		if ok {
-			q.ColumnNameMap[pointer] = name
+		if field.Anonymous {
+			modelType := field.Type
+			if modelType.Kind() == reflect.Ptr {
+				modelType = modelType.Elem()
+			}
+			for j := 0; j < modelType.NumField(); j++ {
+				pointer := valueOf.Elem().FieldByName(modelType.Field(j).Name).Addr().Pointer()
+				name := parseColumnName(modelType.Field(j))
+				q.ColumnNameMap[pointer] = name
+			}
 		} else {
-			namingStrategy := schema.NamingStrategy{}
-			name = namingStrategy.ColumnName("", field.Name)
+			pointer := valueOf.Elem().Field(i).Addr().Pointer()
+			name := parseColumnName(field)
 			q.ColumnNameMap[pointer] = name
 		}
 	}
 
 	// store to cache
-	modelInstanceCache.Store(modelType, model)
-	columnNameMapCache.Store(modelType, q.ColumnNameMap)
+	modelInstanceCache.Store(modelTypeStr, model)
+	columnNameMapCache.Store(modelTypeStr, q.ColumnNameMap)
 
 	return model
+}
+
+func parseColumnName(field reflect.StructField) string {
+	tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
+	name, ok := tagSetting["COLUMN"]
+	if ok {
+		return name
+	}
+	namingStrategy := schema.NamingStrategy{}
+	return namingStrategy.ColumnName("", field.Name)
 }
 
 func (q *Query[T]) getColumnName(v any) string {

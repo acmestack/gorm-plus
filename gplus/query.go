@@ -263,6 +263,13 @@ func (q *Query[T]) buildAndIfNeed() {
 	}
 }
 
+func (q *Query[T]) Case(isTrue bool, handleFunc func()) *Query[T] {
+	if isTrue {
+		handleFunc()
+	}
+	return q
+}
+
 func (q *Query[T]) buildOrder(orderType string, columns ...string) {
 	for _, v := range columns {
 		if q.OrderBuilder.Len() > 0 {

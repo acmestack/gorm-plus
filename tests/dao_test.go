@@ -427,7 +427,9 @@ func TestSelectCount(t *testing.T) {
 	}
 
 	query, model := gplus.NewQuery[User]()
-	query.Eq(&model.Username, user1Name).Or().Eq(&model.Username, user2Name)
+	query.Eq(&model.Username, user1Name).Or().Eq(&model.Username, user2Name).Case(false, func() {
+		query.Eq(&model.Age, 1)
+	})
 	count, db := gplus.SelectCount(query)
 	if db.Error != nil {
 		t.Errorf("errors happened when SelectCount : %v", db.Error)

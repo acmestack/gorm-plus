@@ -285,33 +285,51 @@ func (q *Query[T]) buildColumnNameMap() *T {
 	}
 	q.ColumnNameMap = make(map[uintptr]string)
 	model := new(T)
-	valueOf := reflect.ValueOf(model)
-	typeOf := reflect.TypeOf(model)
+	valueOf := reflect.ValueOf(model).Elem()
+	typeOf := reflect.TypeOf(model).Elem()
 
-	for i := 0; i < valueOf.Elem().NumField(); i++ {
-		field := typeOf.Elem().Field(i)
+	for i := 0; i < valueOf.NumField(); i++ {
+		field := typeOf.Field(i)
 		if field.Anonymous {
-			modelType := field.Type
-			if modelType.Kind() == reflect.Ptr {
-				modelType = modelType.Elem()
-			}
-			for j := 0; j < modelType.NumField(); j++ {
-				pointer := valueOf.Elem().FieldByName(modelType.Field(j).Name).Addr().Pointer()
-				name := parseColumnName(modelType.Field(j))
-				q.ColumnNameMap[pointer] = name
+			subFieldMap := getSubFieldColumnNameMap(valueOf, field)
+			for key, value := range subFieldMap {
+				q.ColumnNameMap[key] = value
 			}
 		} else {
-			pointer := valueOf.Elem().Field(i).Addr().Pointer()
+			pointer := valueOf.Field(i).Addr().Pointer()
 			name := parseColumnName(field)
 			q.ColumnNameMap[pointer] = name
 		}
 	}
-
 	// store to cache
 	modelInstanceCache.Store(modelTypeStr, model)
 	columnNameMapCache.Store(modelTypeStr, q.ColumnNameMap)
 
 	return model
+}
+
+func getSubFieldColumnNameMap(valueOf reflect.Value, field reflect.StructField) map[uintptr]string {
+	result := make(map[uintptr]string)
+
+	modelType := field.Type
+	if modelType.Kind() == reflect.Ptr {
+		modelType = modelType.Elem()
+	}
+	for j := 0; j < modelType.NumField(); j++ {
+		subField := modelType.Field(j)
+		if subField.Anonymous {
+			nestedFields := getSubFieldColumnNameMap(valueOf, subField)
+			for key, value := range nestedFields {
+				result[key] = value
+			}
+		} else {
+			pointer := valueOf.FieldByName(modelType.Field(j).Name).Addr().Pointer()
+			name := parseColumnName(modelType.Field(j))
+			result[pointer] = name
+		}
+	}
+
+	return result
 }
 
 func parseColumnName(field reflect.StructField) string {

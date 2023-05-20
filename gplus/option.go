@@ -20,27 +20,46 @@ package gplus
 import "gorm.io/gorm"
 
 type Option struct {
-	Omits   []any
-	Selects []any
 	Db      *gorm.DB
+	Selects []any
+	Omits   []any
+
+	IgnoreTotal bool
 }
 
 type OptionFunc func(*Option)
 
-func Omit(columns ...any) OptionFunc {
+// Db 使用传入的Db对象
+func Db(db *gorm.DB) OptionFunc {
 	return func(o *Option) {
-		o.Omits = append(o.Omits, columns...)
+		o.Db = db
 	}
 }
 
+// Session 创建回话
+func Session(session *gorm.Session) OptionFunc {
+	return func(o *Option) {
+		o.Db = globalDb.Session(session)
+	}
+}
+
+// Select 指定需要查询的字段
 func Select(columns ...any) OptionFunc {
 	return func(o *Option) {
 		o.Selects = append(o.Selects, columns...)
 	}
 }
 
-func Db(db *gorm.DB) OptionFunc {
+// Omit 指定需要忽略的字段
+func Omit(columns ...any) OptionFunc {
 	return func(o *Option) {
-		o.Db = db
+		o.Omits = append(o.Omits, columns...)
+	}
+}
+
+// IgnoreTotal 分页查询忽略总数 issue: https://github.com/acmestack/gorm-plus/issues/37
+func IgnoreTotal() OptionFunc {
+	return func(o *Option) {
+		o.IgnoreTotal = true
 	}
 }

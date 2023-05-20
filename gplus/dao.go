@@ -52,14 +52,16 @@ func NewPage[T any](current, size int) *Page[T] {
 	return &Page[T]{Current: current, Size: size}
 }
 
-func Insert[T any](entity *T, dbs ...*gorm.DB) *gorm.DB {
-	db := getDb(dbs...)
+// Insert 插入一条记录
+func Insert[T any](entity *T, opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
 	resultDb := db.Create(entity)
 	return resultDb
 }
 
-func InsertBatch[T any](entities []*T, dbs ...*gorm.DB) *gorm.DB {
-	db := getDb(dbs...)
+// InsertBatch 批量插入多条记录
+func InsertBatch[T any](entities []*T, opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
 	if len(entities) == 0 {
 		return db
 	}
@@ -67,8 +69,9 @@ func InsertBatch[T any](entities []*T, dbs ...*gorm.DB) *gorm.DB {
 	return resultDb
 }
 
-func InsertBatchSize[T any](entities []*T, batchSize int, dbs ...*gorm.DB) *gorm.DB {
-	db := getDb(dbs...)
+// InsertBatchSize 批量插入多条记录
+func InsertBatchSize[T any](entities []*T, batchSize int, opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
 	if len(entities) == 0 {
 		return db
 	}
@@ -79,31 +82,35 @@ func InsertBatchSize[T any](entities []*T, batchSize int, dbs ...*gorm.DB) *gorm
 	return resultDb
 }
 
-func DeleteById[T any](id any, dbs ...*gorm.DB) *gorm.DB {
-	db := getDb(dbs...)
+// DeleteById 根据 ID 删除记录
+func DeleteById[T any](id any, opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
 	var entity T
 	resultDb := db.Where(getPkColumnName[T](), id).Delete(&entity)
 	return resultDb
 }
 
-func DeleteByIds[T any](ids any, dbs ...*gorm.DB) *gorm.DB {
+// DeleteByIds 根据 ID 批量删除记录
+func DeleteByIds[T any](ids any, opts ...OptionFunc) *gorm.DB {
 	q, _ := NewQuery[T]()
 	q.In(getPkColumnName[T](), ids)
-	resultDb := Delete[T](q, dbs...)
+	resultDb := Delete[T](q, opts...)
 	return resultDb
 }
 
-func Delete[T any](q *Query[T], dbs ...*gorm.DB) *gorm.DB {
-	db := getDb(dbs...)
+// Delete 根据条件删除记录
+func Delete[T any](q *Query[T], opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
 	var entity T
 	resultDb := db.Where(q.QueryBuilder.String(), q.QueryArgs...).Delete(&entity)
 	return resultDb
 }
 
-func DeleteByMap[T any](q *Query[T], dbs ...*gorm.DB) *gorm.DB {
-	db := getDb(dbs...)
+// DeleteByMap 根据Map删除记录
+func DeleteByMap[T any](q *Query[T], opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
 	for k, v := range q.ConditionMap {
-		columnName := q.getColumnName(k)
+		columnName := getColumnName(k)
 		q.Eq(columnName, v)
 	}
 	var entity T
@@ -111,104 +118,121 @@ func DeleteByMap[T any](q *Query[T], dbs ...*gorm.DB) *gorm.DB {
 	return resultDb
 }
 
-func UpdateById[T any](entity *T, dbs ...*gorm.DB) *gorm.DB {
-	db := getDb(dbs...)
+// UpdateById 根据 ID 更新
+func UpdateById[T any](entity *T, opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
 	resultDb := db.Model(entity).Updates(entity)
 	return resultDb
 }
 
-func Update[T any](q *Query[T], dbs ...*gorm.DB) *gorm.DB {
-	db := getDb(dbs...)
+// Update 根据 Map 更新
+func Update[T any](q *Query[T], opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
 	resultDb := db.Model(new(T)).Where(q.QueryBuilder.String(), q.QueryArgs...).Updates(&q.UpdateMap)
 	return resultDb
 }
 
-func SelectById[T any](id any, dbs ...*gorm.DB) (*T, *gorm.DB) {
+// SelectById 根据 ID 查询单条记录
+func SelectById[T any](id any, opts ...OptionFunc) (*T, *gorm.DB) {
 	q, _ := NewQuery[T]()
 	q.Eq(getPkColumnName[T](), id)
 	var entity T
-	resultDb := buildCondition(q, dbs...)
+	resultDb := buildCondition(q, opts...)
 	return &entity, resultDb.First(&entity)
 }
 
-func SelectByIds[T any](ids any, dbs ...*gorm.DB) ([]*T, *gorm.DB) {
+// SelectByIds 根据 ID 查询多条记录
+func SelectByIds[T any](ids any, opts ...OptionFunc) ([]*T, *gorm.DB) {
 	q, _ := NewQuery[T]()
 	q.In(getPkColumnName[T](), ids)
-	return SelectList[T](q, dbs...)
+	return SelectList[T](q, opts...)
 }
 
-func SelectOne[T any](q *Query[T], dbs ...*gorm.DB) (*T, *gorm.DB) {
+// SelectOne 根据条件查询单条记录
+func SelectOne[T any](q *Query[T], opts ...OptionFunc) (*T, *gorm.DB) {
 	var entity T
-	resultDb := buildCondition(q, dbs...)
+	resultDb := buildCondition(q, opts...)
 	return &entity, resultDb.First(&entity)
 }
 
-func Exists[T any](q *Query[T], dbs ...*gorm.DB) (bool, error) {
-	_, dbRes := SelectOne[T](q, dbs...)
+// Exists 根据条件判断记录是否存在
+func Exists[T any](q *Query[T], opts ...OptionFunc) (bool, error) {
+	_, dbRes := SelectOne[T](q, opts...)
 	return dbRes.RowsAffected > 0, dbRes.Error
 }
 
-func SelectList[T any](q *Query[T], dbs ...*gorm.DB) ([]*T, *gorm.DB) {
-	resultDb := buildCondition(q, dbs...)
+// SelectList 根据条件查询多条记录
+func SelectList[T any](q *Query[T], opts ...OptionFunc) ([]*T, *gorm.DB) {
+	resultDb := buildCondition(q, opts...)
 	var results []*T
 	resultDb.Find(&results)
 	return results, resultDb
 }
 
-func SelectListModel[T any, R any](q *Query[T], dbs ...*gorm.DB) ([]*R, *gorm.DB) {
-	resultDb := buildCondition(q, dbs...)
+// SelectListModel 根据条件查询多条记录
+// 第一个泛型代表数据库表实体
+// 第二个泛型代表返回记录实体
+func SelectListModel[T any, R any](q *Query[T], opts ...OptionFunc) ([]*R, *gorm.DB) {
+	resultDb := buildCondition(q, opts...)
 	var results []*R
 	resultDb.Scan(&results)
 	return results, resultDb
 }
 
-func SelectListByMap[T any](q *Query[T], dbs ...*gorm.DB) ([]*T, *gorm.DB) {
-	resultDb := buildCondition(q, dbs...)
+// SelectListByMap 根据 Map 查询多条记录
+func SelectListByMap[T any](q *Query[T], opts ...OptionFunc) ([]*T, *gorm.DB) {
+	resultDb := buildCondition(q, opts...)
 	var results []*T
 	resultDb.Find(&results)
 	return results, resultDb
 }
 
-func SelectListMaps[T any](q *Query[T], dbs ...*gorm.DB) ([]map[string]any, *gorm.DB) {
-	resultDb := buildCondition(q, dbs...)
+// SelectListMaps 根据条件查询，返回Map记录
+func SelectListMaps[T any](q *Query[T], opts ...OptionFunc) ([]map[string]any, *gorm.DB) {
+	resultDb := buildCondition(q, opts...)
 	var results []map[string]any
 	resultDb.Find(&results)
 	return results, resultDb
 }
 
-func SelectPage[T any](page *Page[T], q *Query[T], dbs ...*gorm.DB) (*Page[T], *gorm.DB) {
-	total, countDb := SelectCount[T](q, dbs...)
+// SelectPage 根据条件分页查询记录
+func SelectPage[T any](page *Page[T], q *Query[T], opts ...OptionFunc) (*Page[T], *gorm.DB) {
+	total, countDb := SelectCount[T](q, opts...)
 	if countDb.Error != nil {
 		return page, countDb
 	}
 	page.Total = total
-	resultDb := buildCondition(q, dbs...)
+	resultDb := buildCondition(q, opts...)
 	var results []*T
 	resultDb.Scopes(paginate(page)).Find(&results)
 	page.Records = results
 	return page, resultDb
 }
 
-func SelectPageModel[T any, R any](page *Page[R], q *Query[T], dbs ...*gorm.DB) (*Page[R], *gorm.DB) {
-	total, countDb := SelectCount[T](q, dbs...)
+// SelectPageModel 根据条件分页查询记录
+// 第一个泛型代表数据库表实体
+// 第二个泛型代表返回记录实体
+func SelectPageModel[T any, R any](page *Page[R], q *Query[T], opts ...OptionFunc) (*Page[R], *gorm.DB) {
+	total, countDb := SelectCount[T](q, opts...)
 	if countDb.Error != nil {
 		return page, countDb
 	}
 	page.Total = total
-	resultDb := buildCondition(q, dbs...)
+	resultDb := buildCondition(q, opts...)
 	var results []*R
 	resultDb.Scopes(paginate(page)).Scan(&results)
 	page.Records = results
 	return page, resultDb
 }
 
-func SelectPageMaps[T any](page *Page[map[string]any], q *Query[T], dbs ...*gorm.DB) (*Page[map[string]any], *gorm.DB) {
-	total, countDb := SelectCount[T](q, dbs...)
+// SelectPageMaps 根据条件分页查询，返回分页Map记录
+func SelectPageMaps[T any](page *Page[map[string]any], q *Query[T], opts ...OptionFunc) (*Page[map[string]any], *gorm.DB) {
+	total, countDb := SelectCount[T](q, opts...)
 	if countDb.Error != nil {
 		return page, countDb
 	}
 	page.Total = total
-	resultDb := buildCondition(q, dbs...)
+	resultDb := buildCondition(q, opts...)
 	var results []map[string]any
 	resultDb.Scopes(paginate(page)).Find(&results)
 	for _, m := range results {
@@ -217,9 +241,10 @@ func SelectPageMaps[T any](page *Page[map[string]any], q *Query[T], dbs ...*gorm
 	return page, resultDb
 }
 
-func SelectCount[T any](q *Query[T], dbs ...*gorm.DB) (int64, *gorm.DB) {
+// SelectCount 根据条件查询记录数量
+func SelectCount[T any](q *Query[T], opts ...OptionFunc) (int64, *gorm.DB) {
 	var count int64
-	resultDb := buildCondition(q, dbs...)
+	resultDb := buildCondition(q, opts...)
 	resultDb.Count(&count)
 	return count, resultDb
 }
@@ -239,8 +264,8 @@ func paginate[T any](p *Page[T]) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func buildCondition[T any](q *Query[T], dbs ...*gorm.DB) *gorm.DB {
-	db := getDb(dbs...)
+func buildCondition[T any](q *Query[T], opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
 	resultDb := db.Model(new(T))
 	if q != nil {
 		if len(q.DistinctColumns) > 0 {
@@ -269,7 +294,7 @@ func buildCondition[T any](q *Query[T], dbs ...*gorm.DB) *gorm.DB {
 		if len(q.ConditionMap) > 0 {
 			var condMap = make(map[string]any)
 			for k, v := range q.ConditionMap {
-				columnName := q.getColumnName(k)
+				columnName := getColumnName(k)
 				condMap[columnName] = v
 			}
 			resultDb.Where(condMap)
@@ -315,12 +340,48 @@ func getPkColumnName[T any]() string {
 	return columnName
 }
 
-func getDb(dbs ...*gorm.DB) *gorm.DB {
-	if len(dbs) > 0 {
-		db := dbs[0]
-		return db
+func getDb(opts ...OptionFunc) *gorm.DB {
+	var config Option
+	for _, op := range opts {
+		op(&config)
 	}
-	return globalDb
+
+	// Clauses()目的是为了初始化Db，如果db已经被初始化了,会直接返回db
+	var db = globalDb.Clauses()
+
+	if config.Db != nil {
+		db = config.Db.Clauses()
+	}
+
+	// 设置需要忽略的字段
+	setOmitIfNeed(config, db)
+
+	// 设置选择的字段
+	setSelectIfNeed(config, db)
+
+	return db
+}
+
+func setSelectIfNeed(config Option, db *gorm.DB) {
+	if len(config.Selects) > 0 {
+		var columnNames []string
+		for _, column := range config.Selects {
+			columnName := getColumnName(column)
+			columnNames = append(columnNames, columnName)
+		}
+		db.Select(columnNames)
+	}
+}
+
+func setOmitIfNeed(config Option, db *gorm.DB) {
+	if len(config.Omits) > 0 {
+		var columnNames []string
+		for _, column := range config.Omits {
+			columnName := getColumnName(column)
+			columnNames = append(columnNames, columnName)
+		}
+		db.Omit(columnNames...)
+	}
 }
 
 func Begin(opts ...*sql.TxOptions) *gorm.DB {

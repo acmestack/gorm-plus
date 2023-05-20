@@ -19,16 +19,10 @@ package gplus
 
 import (
 	"fmt"
+	"github.com/acmestack/gorm-plus/constants"
 	"reflect"
 	"strings"
-	"sync"
-
-	"github.com/acmestack/gorm-plus/constants"
-	"gorm.io/gorm/schema"
 )
-
-var columnNameMapCache sync.Map
-var modelInstanceCache sync.Map
 
 type Query[T any] struct {
 	SelectColumns     []string
@@ -45,7 +39,6 @@ type Query[T any] struct {
 	HavingArgs        []any
 	LastCond          string
 	UpdateMap         map[string]any
-	ColumnNameMap     map[uintptr]string
 	ConditionMap      map[any]any
 }
 
@@ -115,7 +108,7 @@ func (q *Query[T]) LikeRight(column any, val any) *Query[T] {
 }
 
 func (q *Query[T]) IsNull(column any) *Query[T] {
-	columnName := q.getColumnName(column)
+	columnName := getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s is null", columnName)
 	q.QueryBuilder.WriteString(cond)
@@ -123,7 +116,7 @@ func (q *Query[T]) IsNull(column any) *Query[T] {
 }
 
 func (q *Query[T]) IsNotNull(column any) *Query[T] {
-	columnName := q.getColumnName(column)
+	columnName := getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s is not null", columnName)
 	q.QueryBuilder.WriteString(cond)
@@ -141,7 +134,7 @@ func (q *Query[T]) NotIn(column any, val any) *Query[T] {
 }
 
 func (q *Query[T]) Between(column any, start, end any) *Query[T] {
-	columnName := q.getColumnName(column)
+	columnName := getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s ? and ? ", columnName, constants.Between)
 	q.QueryBuilder.WriteString(cond)
@@ -150,7 +143,7 @@ func (q *Query[T]) Between(column any, start, end any) *Query[T] {
 }
 
 func (q *Query[T]) NotBetween(column any, start, end any) *Query[T] {
-	columnName := q.getColumnName(column)
+	columnName := getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s %s ? and ? ", columnName, constants.Not, constants.Between)
 	q.QueryBuilder.WriteString(cond)
@@ -160,8 +153,9 @@ func (q *Query[T]) NotBetween(column any, start, end any) *Query[T] {
 
 func (q *Query[T]) Distinct(columns ...any) *Query[T] {
 	for _, v := range columns {
-		columnName := q.ColumnNameMap[reflect.ValueOf(v).Pointer()]
-		q.DistinctColumns = append(q.DistinctColumns, columnName)
+		if columnName, ok := columnNameCache.Load(reflect.ValueOf(v).Pointer()); ok {
+			q.DistinctColumns = append(q.DistinctColumns, columnName.(string))
+		}
 	}
 	return q
 }
@@ -194,7 +188,7 @@ func (q *Query[T]) OrBracket(bracketQuery *Query[T]) *Query[T] {
 
 func (q *Query[T]) Select(columns ...any) *Query[T] {
 	for _, v := range columns {
-		columnName := q.getColumnName(v)
+		columnName := getColumnName(v)
 		q.SelectColumns = append(q.SelectColumns, columnName)
 	}
 	return q
@@ -203,7 +197,7 @@ func (q *Query[T]) Select(columns ...any) *Query[T] {
 func (q *Query[T]) OrderByDesc(columns ...any) *Query[T] {
 	var columnNames []string
 	for _, v := range columns {
-		columnName := q.getColumnName(v)
+		columnName := getColumnName(v)
 		columnNames = append(columnNames, columnName)
 	}
 	q.buildOrder(constants.Desc, columnNames...)
@@ -213,7 +207,7 @@ func (q *Query[T]) OrderByDesc(columns ...any) *Query[T] {
 func (q *Query[T]) OrderByAsc(columns ...any) *Query[T] {
 	var columnNames []string
 	for _, v := range columns {
-		columnName := q.getColumnName(v)
+		columnName := getColumnName(v)
 		columnNames = append(columnNames, columnName)
 	}
 	q.buildOrder(constants.Asc, columnNames...)
@@ -222,7 +216,7 @@ func (q *Query[T]) OrderByAsc(columns ...any) *Query[T] {
 
 func (q *Query[T]) Group(columns ...any) *Query[T] {
 	for _, v := range columns {
-		columnName := q.getColumnName(v)
+		columnName := getColumnName(v)
 		if q.GroupBuilder.Len() > 0 {
 			q.GroupBuilder.WriteString(constants.Comma)
 		}
@@ -238,7 +232,7 @@ func (q *Query[T]) Having(having string, args ...any) *Query[T] {
 }
 
 func (q *Query[T]) Set(column any, val any) *Query[T] {
-	columnName := q.getColumnName(column)
+	columnName := getColumnName(column)
 	if q.UpdateMap == nil {
 		q.UpdateMap = make(map[string]any)
 	}
@@ -247,7 +241,7 @@ func (q *Query[T]) Set(column any, val any) *Query[T] {
 }
 
 func (q *Query[T]) addCond(column any, val any, condType string) {
-	columnName := q.getColumnName(column)
+	columnName := getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s ?", columnName, condType)
 	q.QueryBuilder.WriteString(cond)
@@ -278,78 +272,23 @@ func (q *Query[T]) buildColumnNameMap() *T {
 	// first try to load from cache
 	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
 	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
-		if cachedColumnNameMap, ok := columnNameMapCache.Load(modelTypeStr); ok {
-			q.ColumnNameMap = cachedColumnNameMap.(map[uintptr]string)
-			return model.(*T)
-		}
+		return model.(*T)
 	}
-	q.ColumnNameMap = make(map[uintptr]string)
 	model := new(T)
-	valueOf := reflect.ValueOf(model).Elem()
-	typeOf := reflect.TypeOf(model).Elem()
-
-	for i := 0; i < valueOf.NumField(); i++ {
-		field := typeOf.Field(i)
-		if field.Anonymous {
-			subFieldMap := getSubFieldColumnNameMap(valueOf, field)
-			for key, value := range subFieldMap {
-				q.ColumnNameMap[key] = value
-			}
-		} else {
-			pointer := valueOf.Field(i).Addr().Pointer()
-			name := parseColumnName(field)
-			q.ColumnNameMap[pointer] = name
-		}
-	}
-	// store to cache
-	modelInstanceCache.Store(modelTypeStr, model)
-	columnNameMapCache.Store(modelTypeStr, q.ColumnNameMap)
-
+	Cache(model,globalDb.Config.NamingStrategy)
 	return model
 }
 
-func getSubFieldColumnNameMap(valueOf reflect.Value, field reflect.StructField) map[uintptr]string {
-	result := make(map[uintptr]string)
-
-	modelType := field.Type
-	if modelType.Kind() == reflect.Ptr {
-		modelType = modelType.Elem()
-	}
-	for j := 0; j < modelType.NumField(); j++ {
-		subField := modelType.Field(j)
-		if subField.Anonymous {
-			nestedFields := getSubFieldColumnNameMap(valueOf, subField)
-			for key, value := range nestedFields {
-				result[key] = value
-			}
-		} else {
-			pointer := valueOf.FieldByName(modelType.Field(j).Name).Addr().Pointer()
-			name := parseColumnName(modelType.Field(j))
-			result[pointer] = name
-		}
-	}
-
-	return result
-}
-
-func parseColumnName(field reflect.StructField) string {
-	tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
-	name, ok := tagSetting["COLUMN"]
-	if ok {
-		return name
-	}
-	namingStrategy := schema.NamingStrategy{}
-	return namingStrategy.ColumnName("", field.Name)
-}
-
-func (q *Query[T]) getColumnName(v any) string {
+func  getColumnName(v any) string {
 	var columnName string
 	valueOf := reflect.ValueOf(v)
 	switch valueOf.Kind() {
 	case reflect.String:
 		columnName = v.(string)
 	case reflect.Pointer:
-		columnName = q.ColumnNameMap[valueOf.Pointer()]
+		if name, ok := columnNameCache.Load(valueOf.Pointer()); ok {
+			columnName = name.(string)
+		}
 	}
 	return columnName
 }

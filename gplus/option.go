@@ -57,7 +57,7 @@ func Omit(columns ...any) OptionFunc {
 	}
 }
 
-// IgnoreTotal 分页查询忽略总数
+// IgnoreTotal 分页查询忽略总数 issue: https://github.com/acmestack/gorm-plus/issues/37
 func IgnoreTotal() OptionFunc {
 	return func(o *Option) {
 		o.IgnoreTotal = true

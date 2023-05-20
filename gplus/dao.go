@@ -197,11 +197,17 @@ func SelectListMaps[T any](q *Query[T], opts ...OptionFunc) ([]map[string]any, *
 
 // SelectPage 根据条件分页查询记录
 func SelectPage[T any](page *Page[T], q *Query[T], opts ...OptionFunc) (*Page[T], *gorm.DB) {
-	total, countDb := SelectCount[T](q, opts...)
-	if countDb.Error != nil {
-		return page, countDb
+	option := getOption(opts)
+
+	// 如果需要分页忽略总数，不查询总数
+	if !option.IgnoreTotal {
+		total, countDb := SelectCount[T](q, opts...)
+		if countDb.Error != nil {
+			return page, countDb
+		}
+		page.Total = total
 	}
-	page.Total = total
+
 	resultDb := buildCondition(q, opts...)
 	var results []*T
 	resultDb.Scopes(paginate(page)).Find(&results)
@@ -213,11 +219,15 @@ func SelectPage[T any](page *Page[T], q *Query[T], opts ...OptionFunc) (*Page[T]
 // 第一个泛型代表数据库表实体
 // 第二个泛型代表返回记录实体
 func SelectPageModel[T any, R any](page *Page[R], q *Query[T], opts ...OptionFunc) (*Page[R], *gorm.DB) {
-	total, countDb := SelectCount[T](q, opts...)
-	if countDb.Error != nil {
-		return page, countDb
+	option := getOption(opts)
+	// 如果需要分页忽略总数，不查询总数
+	if !option.IgnoreTotal {
+		total, countDb := SelectCount[T](q, opts...)
+		if countDb.Error != nil {
+			return page, countDb
+		}
+		page.Total = total
 	}
-	page.Total = total
 	resultDb := buildCondition(q, opts...)
 	var results []*R
 	resultDb.Scopes(paginate(page)).Scan(&results)
@@ -227,11 +237,15 @@ func SelectPageModel[T any, R any](page *Page[R], q *Query[T], opts ...OptionFun
 
 // SelectPageMaps 根据条件分页查询，返回分页Map记录
 func SelectPageMaps[T any](page *Page[map[string]any], q *Query[T], opts ...OptionFunc) (*Page[map[string]any], *gorm.DB) {
-	total, countDb := SelectCount[T](q, opts...)
-	if countDb.Error != nil {
-		return page, countDb
+	option := getOption(opts)
+	// 如果需要分页忽略总数，不查询总数
+	if !option.IgnoreTotal {
+		total, countDb := SelectCount[T](q, opts...)
+		if countDb.Error != nil {
+			return page, countDb
+		}
+		page.Total = total
 	}
-	page.Total = total
 	resultDb := buildCondition(q, opts...)
 	var results []map[string]any
 	resultDb.Scopes(paginate(page)).Find(&results)
@@ -247,6 +261,11 @@ func SelectCount[T any](q *Query[T], opts ...OptionFunc) (int64, *gorm.DB) {
 	resultDb := buildCondition(q, opts...)
 	resultDb.Count(&count)
 	return count, resultDb
+}
+
+func Begin(opts ...*sql.TxOptions) *gorm.DB {
+	db := getDb()
+	return db.Begin(opts...)
 }
 
 func paginate[T any](p *Page[T]) func(db *gorm.DB) *gorm.DB {
@@ -341,31 +360,27 @@ func getPkColumnName[T any]() string {
 }
 
 func getDb(opts ...OptionFunc) *gorm.DB {
-	var config Option
-	for _, op := range opts {
-		op(&config)
-	}
-
+	option := getOption(opts)
 	// Clauses()目的是为了初始化Db，如果db已经被初始化了,会直接返回db
 	var db = globalDb.Clauses()
 
-	if config.Db != nil {
-		db = config.Db.Clauses()
+	if option.Db != nil {
+		db = option.Db.Clauses()
 	}
 
 	// 设置需要忽略的字段
-	setOmitIfNeed(config, db)
+	setOmitIfNeed(option, db)
 
 	// 设置选择的字段
-	setSelectIfNeed(config, db)
+	setSelectIfNeed(option, db)
 
 	return db
 }
 
-func setSelectIfNeed(config Option, db *gorm.DB) {
-	if len(config.Selects) > 0 {
+func setSelectIfNeed(option Option, db *gorm.DB) {
+	if len(option.Selects) > 0 {
 		var columnNames []string
-		for _, column := range config.Selects {
+		for _, column := range option.Selects {
 			columnName := getColumnName(column)
 			columnNames = append(columnNames, columnName)
 		}
@@ -373,10 +388,10 @@ func setSelectIfNeed(config Option, db *gorm.DB) {
 	}
 }
 
-func setOmitIfNeed(config Option, db *gorm.DB) {
-	if len(config.Omits) > 0 {
+func setOmitIfNeed(option Option, db *gorm.DB) {
+	if len(option.Omits) > 0 {
 		var columnNames []string
-		for _, column := range config.Omits {
+		for _, column := range option.Omits {
 			columnName := getColumnName(column)
 			columnNames = append(columnNames, columnName)
 		}
@@ -384,7 +399,10 @@ func setOmitIfNeed(config Option, db *gorm.DB) {
 	}
 }
 
-func Begin(opts ...*sql.TxOptions) *gorm.DB {
-	db := getDb()
-	return db.Begin(opts...)
+func getOption(opts []OptionFunc) Option {
+	var config Option
+	for _, op := range opts {
+		op(&config)
+	}
+	return config
 }

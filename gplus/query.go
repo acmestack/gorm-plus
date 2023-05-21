@@ -42,71 +42,84 @@ type QueryCond[T any] struct {
 	ConditionMap      map[any]any
 }
 
+// NewQuery 构建查询条件
 func NewQuery[T any]() (*QueryCond[T], *T) {
 	q := &QueryCond[T]{}
 	return q, q.buildColumnNameMap()
 }
 
+// NewQueryMap 构建Map查询条件
 func NewQueryMap[T any]() (*QueryCond[T], *T) {
 	q := &QueryCond[T]{}
 	q.ConditionMap = make(map[any]any)
 	return q, q.buildColumnNameMap()
 }
 
+// Eq 等于 =
 func (q *QueryCond[T]) Eq(column any, val any) *QueryCond[T] {
 	q.addCond(column, val, constants.Eq)
 	return q
 }
 
+// Ne 不等于 !=
 func (q *QueryCond[T]) Ne(column any, val any) *QueryCond[T] {
 	q.addCond(column, val, constants.Ne)
 	return q
 }
 
+// Gt 大于 >
 func (q *QueryCond[T]) Gt(column any, val any) *QueryCond[T] {
 	q.addCond(column, val, constants.Gt)
 	return q
 }
 
+// Ge 大于等于 >=
 func (q *QueryCond[T]) Ge(column any, val any) *QueryCond[T] {
 	q.addCond(column, val, constants.Ge)
 	return q
 }
 
+// Lt 小于 <
 func (q *QueryCond[T]) Lt(column any, val any) *QueryCond[T] {
 	q.addCond(column, val, constants.Lt)
 	return q
 }
 
+// Le 小于等于 <=
 func (q *QueryCond[T]) Le(column any, val any) *QueryCond[T] {
 	q.addCond(column, val, constants.Le)
 	return q
 }
 
+// Like 模糊 LIKE '%值%'
 func (q *QueryCond[T]) Like(column any, val any) *QueryCond[T] {
 	s := fmt.Sprintf("%v", val)
 	q.addCond(column, "%"+s+"%", constants.Like)
 	return q
 }
 
+// NotLike 非模糊 NOT LIKE '%值%'
 func (q *QueryCond[T]) NotLike(column any, val any) *QueryCond[T] {
 	s := fmt.Sprintf("%v", val)
 	q.addCond(column, "%"+s+"%", constants.Not+" "+constants.Like)
 	return q
 }
 
+// LikeLeft 左模糊 LIKE '%值'
 func (q *QueryCond[T]) LikeLeft(column any, val any) *QueryCond[T] {
 	s := fmt.Sprintf("%v", val)
 	q.addCond(column, "%"+s, constants.Like)
 	return q
 }
 
+// LikeRight 右模糊 LIKE '值%'
 func (q *QueryCond[T]) LikeRight(column any, val any) *QueryCond[T] {
 	s := fmt.Sprintf("%v", val)
 	q.addCond(column, s+"%", constants.Like)
 	return q
 }
 
+// IsNull 是否为空 字段 IS NULL
 func (q *QueryCond[T]) IsNull(column any) *QueryCond[T] {
 	columnName := getColumnName(column)
 	q.buildAndIfNeed()
@@ -115,6 +128,7 @@ func (q *QueryCond[T]) IsNull(column any) *QueryCond[T] {
 	return q
 }
 
+// IsNotNull 是否非空 字段 IS NOT NULL
 func (q *QueryCond[T]) IsNotNull(column any) *QueryCond[T] {
 	columnName := getColumnName(column)
 	q.buildAndIfNeed()
@@ -123,16 +137,19 @@ func (q *QueryCond[T]) IsNotNull(column any) *QueryCond[T] {
 	return q
 }
 
+// In 字段 IN (值1, 值2, ...)
 func (q *QueryCond[T]) In(column any, val any) *QueryCond[T] {
 	q.addCond(column, val, constants.In)
 	return q
 }
 
+// NotIn 字段 NOT IN (值1, 值2, ...)
 func (q *QueryCond[T]) NotIn(column any, val any) *QueryCond[T] {
 	q.addCond(column, val, constants.Not+" "+constants.In)
 	return q
 }
 
+// Between BETWEEN 值1 AND 值2
 func (q *QueryCond[T]) Between(column any, start, end any) *QueryCond[T] {
 	columnName := getColumnName(column)
 	q.buildAndIfNeed()
@@ -142,6 +159,7 @@ func (q *QueryCond[T]) Between(column any, start, end any) *QueryCond[T] {
 	return q
 }
 
+// NotBetween NOT BETWEEN 值1 AND 值2
 func (q *QueryCond[T]) NotBetween(column any, start, end any) *QueryCond[T] {
 	columnName := getColumnName(column)
 	q.buildAndIfNeed()
@@ -151,6 +169,7 @@ func (q *QueryCond[T]) NotBetween(column any, start, end any) *QueryCond[T] {
 	return q
 }
 
+// Distinct 去除重复字段值
 func (q *QueryCond[T]) Distinct(columns ...any) *QueryCond[T] {
 	for _, v := range columns {
 		if columnName, ok := columnNameCache.Load(reflect.ValueOf(v).Pointer()); ok {
@@ -160,6 +179,7 @@ func (q *QueryCond[T]) Distinct(columns ...any) *QueryCond[T] {
 	return q
 }
 
+// And 拼接 AND
 func (q *QueryCond[T]) And() *QueryCond[T] {
 	q.QueryBuilder.WriteString(constants.And)
 	q.QueryBuilder.WriteString(" ")
@@ -167,12 +187,14 @@ func (q *QueryCond[T]) And() *QueryCond[T] {
 	return q
 }
 
+// AndBracket 拼接 AND，括号包裹条件
 func (q *QueryCond[T]) AndBracket(bracketQuery *QueryCond[T]) *QueryCond[T] {
 	q.AndBracketBuilder.WriteString(constants.And + " " + constants.LeftBracket + bracketQuery.QueryBuilder.String() + constants.RightBracket + " ")
 	q.AndBracketArgs = append(q.AndBracketArgs, bracketQuery.QueryArgs...)
 	return q
 }
 
+// Or 拼接 OR
 func (q *QueryCond[T]) Or() *QueryCond[T] {
 	q.QueryBuilder.WriteString(constants.Or)
 	q.QueryBuilder.WriteString(" ")
@@ -180,12 +202,14 @@ func (q *QueryCond[T]) Or() *QueryCond[T] {
 	return q
 }
 
+// OrBracket 拼接 OR，括号包裹条件
 func (q *QueryCond[T]) OrBracket(bracketQuery *QueryCond[T]) *QueryCond[T] {
 	q.OrBracketBuilder.WriteString(constants.Or + " " + constants.LeftBracket + bracketQuery.QueryBuilder.String() + constants.RightBracket + " ")
 	q.OrBracketArgs = append(q.OrBracketArgs, bracketQuery.QueryArgs...)
 	return q
 }
 
+// Select 查询字段
 func (q *QueryCond[T]) Select(columns ...any) *QueryCond[T] {
 	for _, v := range columns {
 		columnName := getColumnName(v)
@@ -194,6 +218,7 @@ func (q *QueryCond[T]) Select(columns ...any) *QueryCond[T] {
 	return q
 }
 
+// OrderByDesc 排序：ORDER BY 字段1,字段2 Desc
 func (q *QueryCond[T]) OrderByDesc(columns ...any) *QueryCond[T] {
 	var columnNames []string
 	for _, v := range columns {
@@ -204,6 +229,7 @@ func (q *QueryCond[T]) OrderByDesc(columns ...any) *QueryCond[T] {
 	return q
 }
 
+// OrderByAsc 排序：ORDER BY 字段1,字段2 ASC
 func (q *QueryCond[T]) OrderByAsc(columns ...any) *QueryCond[T] {
 	var columnNames []string
 	for _, v := range columns {
@@ -214,6 +240,7 @@ func (q *QueryCond[T]) OrderByAsc(columns ...any) *QueryCond[T] {
 	return q
 }
 
+// Group 分组：GROUP BY 字段1,字段2
 func (q *QueryCond[T]) Group(columns ...any) *QueryCond[T] {
 	for _, v := range columns {
 		columnName := getColumnName(v)
@@ -225,12 +252,14 @@ func (q *QueryCond[T]) Group(columns ...any) *QueryCond[T] {
 	return q
 }
 
+// Having HAVING SQl语句
 func (q *QueryCond[T]) Having(having string, args ...any) *QueryCond[T] {
 	q.HavingBuilder.WriteString(having)
 	q.HavingArgs = append(q.HavingArgs, args)
 	return q
 }
 
+// Set 设置更新的字段
 func (q *QueryCond[T]) Set(column any, val any) *QueryCond[T] {
 	columnName := getColumnName(column)
 	if q.UpdateMap == nil {

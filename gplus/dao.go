@@ -106,18 +106,6 @@ func Delete[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 	return resultDb
 }
 
-// DeleteByMap 根据Map删除记录
-func DeleteByMap[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
-	db := getDb(opts...)
-	for k, v := range q.ConditionMap {
-		columnName := getColumnName(k)
-		q.Eq(columnName, v)
-	}
-	var entity T
-	resultDb := db.Where(q.queryBuilder.String(), q.queryArgs...).Delete(&entity)
-	return resultDb
-}
-
 // UpdateById 根据 ID 更新
 func UpdateById[T any](entity *T, opts ...OptionFunc) *gorm.DB {
 	db := getDb(opts...)
@@ -297,26 +285,17 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 
 		if q.queryBuilder.Len() > 0 {
 
-			if q.andBracketBuilder.Len() > 0 {
-				q.queryArgs = append(q.queryArgs, q.andBracketArgs...)
-				q.queryBuilder.WriteString(q.andBracketBuilder.String())
+			if q.andNestBuilder.Len() > 0 {
+				q.queryArgs = append(q.queryArgs, q.andNestArgs...)
+				q.queryBuilder.WriteString(q.andNestBuilder.String())
 			}
 
-			if q.orBracketBuilder.Len() > 0 {
-				q.queryArgs = append(q.queryArgs, q.orBracketArgs...)
-				q.queryBuilder.WriteString(q.orBracketBuilder.String())
+			if q.orNestBuilder.Len() > 0 {
+				q.queryArgs = append(q.queryArgs, q.orNestArgs...)
+				q.queryBuilder.WriteString(q.orNestBuilder.String())
 			}
 
 			resultDb.Where(q.queryBuilder.String(), q.queryArgs...)
-		}
-
-		if len(q.ConditionMap) > 0 {
-			var condMap = make(map[string]any)
-			for k, v := range q.ConditionMap {
-				columnName := getColumnName(k)
-				condMap[columnName] = v
-			}
-			resultDb.Where(condMap)
 		}
 
 		if q.orderBuilder.Len() > 0 {
@@ -329,6 +308,14 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 
 		if q.havingBuilder.Len() > 0 {
 			resultDb.Having(q.havingBuilder.String(), q.havingArgs...)
+		}
+
+		if q.limit != nil {
+			resultDb.Limit(*q.limit)
+		}
+
+		if q.offset != 0 {
+			resultDb.Offset(q.offset)
 		}
 	}
 	return resultDb

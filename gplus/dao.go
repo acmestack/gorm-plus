@@ -106,18 +106,6 @@ func Delete[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 	return resultDb
 }
 
-// DeleteByMap 根据Map删除记录
-func DeleteByMap[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
-	db := getDb(opts...)
-	for k, v := range q.ConditionMap {
-		columnName := getColumnName(k)
-		q.Eq(columnName, v)
-	}
-	var entity T
-	resultDb := db.Where(q.queryBuilder.String(), q.queryArgs...).Delete(&entity)
-	return resultDb
-}
-
 // UpdateById 根据 ID 更新
 func UpdateById[T any](entity *T, opts ...OptionFunc) *gorm.DB {
 	db := getDb(opts...)
@@ -308,15 +296,6 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 			}
 
 			resultDb.Where(q.queryBuilder.String(), q.queryArgs...)
-		}
-
-		if len(q.ConditionMap) > 0 {
-			var condMap = make(map[string]any)
-			for k, v := range q.ConditionMap {
-				columnName := getColumnName(k)
-				condMap[columnName] = v
-			}
-			resultDb.Where(condMap)
 		}
 
 		if q.orderBuilder.Len() > 0 {

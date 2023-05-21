@@ -39,7 +39,6 @@ type QueryCond[T any] struct {
 	havingArgs        []any
 	lastCond          string
 	updateMap         map[string]any
-	ConditionMap      map[any]any
 }
 
 // NewQuery 构建查询条件
@@ -81,21 +80,6 @@ func NewQueryModel[T any, R any]() (*QueryCond[T], *T, *R) {
 	}
 
 	return q, t, r
-}
-
-// NewQueryMap 构建Map查询条件
-func NewQueryMap[T any]() (*QueryCond[T], *T) {
-	q := &QueryCond[T]{}
-
-	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
-	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
-		return q, model.(*T)
-	}
-	m := new(T)
-	Cache(m)
-
-	q.ConditionMap = make(map[any]any)
-	return q, m
 }
 
 // Eq 等于 =

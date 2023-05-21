@@ -20,10 +20,9 @@ package gplus
 import "gorm.io/gorm"
 
 type Option struct {
-	Db      *gorm.DB
-	Selects []any
-	Omits   []any
-
+	Db          *gorm.DB
+	Selects     []any
+	Omits       []any
 	IgnoreTotal bool
 }
 

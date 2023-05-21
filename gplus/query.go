@@ -25,20 +25,20 @@ import (
 )
 
 type QueryCond[T any] struct {
-	selectColumns     []string
-	distinctColumns   []string
-	queryBuilder      strings.Builder
-	orBracketBuilder  strings.Builder
-	orBracketArgs     []any
-	andBracketBuilder strings.Builder
-	andBracketArgs    []any
-	queryArgs         []any
-	orderBuilder      strings.Builder
-	groupBuilder      strings.Builder
-	havingBuilder     strings.Builder
-	havingArgs        []any
-	lastCond          string
-	updateMap         map[string]any
+	selectColumns   []string
+	distinctColumns []string
+	queryBuilder    strings.Builder
+	orNestBuilder   strings.Builder
+	orNestArgs      []any
+	andNestBuilder  strings.Builder
+	andNestArgs     []any
+	queryArgs       []any
+	orderBuilder    strings.Builder
+	groupBuilder    strings.Builder
+	havingBuilder   strings.Builder
+	havingArgs      []any
+	lastCond        string
+	updateMap       map[string]any
 }
 
 // NewQuery 构建查询条件
@@ -207,32 +207,32 @@ func (q *QueryCond[T]) Distinct(columns ...any) *QueryCond[T] {
 }
 
 // And 拼接 AND
-func (q *QueryCond[T]) And() *QueryCond[T] {
+func (q *QueryCond[T]) And(fn ...func(q *QueryCond[T])) *QueryCond[T] {
+	if len(fn) > 0 {
+		nestQuery := &QueryCond[T]{}
+		fn[0](nestQuery)
+		q.andNestBuilder.WriteString(constants.And + " " + constants.LeftBracket + nestQuery.queryBuilder.String() + constants.RightBracket + " ")
+		q.andNestArgs = append(q.andNestArgs, nestQuery.queryArgs...)
+		return q
+	}
 	q.queryBuilder.WriteString(constants.And)
 	q.queryBuilder.WriteString(" ")
 	q.lastCond = constants.And
 	return q
 }
 
-// AndBracket 拼接 AND，括号包裹条件
-func (q *QueryCond[T]) AndBracket(bracketQuery *QueryCond[T]) *QueryCond[T] {
-	q.andBracketBuilder.WriteString(constants.And + " " + constants.LeftBracket + bracketQuery.queryBuilder.String() + constants.RightBracket + " ")
-	q.andBracketArgs = append(q.andBracketArgs, bracketQuery.queryArgs...)
-	return q
-}
-
 // Or 拼接 OR
-func (q *QueryCond[T]) Or() *QueryCond[T] {
+func (q *QueryCond[T]) Or(fn ...func(q *QueryCond[T])) *QueryCond[T] {
+	if len(fn) > 0 {
+		nestQuery := &QueryCond[T]{}
+		fn[0](nestQuery)
+		q.orNestBuilder.WriteString(constants.Or + " " + constants.LeftBracket + nestQuery.queryBuilder.String() + constants.RightBracket + " ")
+		q.orNestArgs = append(q.orNestArgs, nestQuery.queryArgs...)
+		return q
+	}
 	q.queryBuilder.WriteString(constants.Or)
 	q.queryBuilder.WriteString(" ")
 	q.lastCond = constants.Or
-	return q
-}
-
-// OrBracket 拼接 OR，括号包裹条件
-func (q *QueryCond[T]) OrBracket(bracketQuery *QueryCond[T]) *QueryCond[T] {
-	q.orBracketBuilder.WriteString(constants.Or + " " + constants.LeftBracket + bracketQuery.queryBuilder.String() + constants.RightBracket + " ")
-	q.orBracketArgs = append(q.orBracketArgs, bracketQuery.queryArgs...)
 	return q
 }
 

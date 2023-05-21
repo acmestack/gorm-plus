@@ -285,14 +285,14 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 
 		if q.queryBuilder.Len() > 0 {
 
-			if q.andBracketBuilder.Len() > 0 {
-				q.queryArgs = append(q.queryArgs, q.andBracketArgs...)
-				q.queryBuilder.WriteString(q.andBracketBuilder.String())
+			if q.andNestBuilder.Len() > 0 {
+				q.queryArgs = append(q.queryArgs, q.andNestArgs...)
+				q.queryBuilder.WriteString(q.andNestBuilder.String())
 			}
 
-			if q.orBracketBuilder.Len() > 0 {
-				q.queryArgs = append(q.queryArgs, q.orBracketArgs...)
-				q.queryBuilder.WriteString(q.orBracketBuilder.String())
+			if q.orNestBuilder.Len() > 0 {
+				q.queryArgs = append(q.queryArgs, q.orNestArgs...)
+				q.queryBuilder.WriteString(q.orNestBuilder.String())
 			}
 
 			resultDb.Where(q.queryBuilder.String(), q.queryArgs...)

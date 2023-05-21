@@ -38,6 +38,8 @@ type QueryCond[T any] struct {
 	havingBuilder   strings.Builder
 	havingArgs      []any
 	lastCond        string
+	limit           *int
+	offset          int
 	updateMap       map[string]any
 }
 
@@ -300,6 +302,18 @@ func (q *QueryCond[T]) Set(column any, val any) *QueryCond[T] {
 		q.updateMap = make(map[string]any)
 	}
 	q.updateMap[columnName] = val
+	return q
+}
+
+// Limit 指的查询记录数量
+func (q *QueryCond[T]) Limit(limit int) *QueryCond[T] {
+	q.limit = &limit
+	return q
+}
+
+// Offset 指定跳过记录数量
+func (q *QueryCond[T]) Offset(offset int) *QueryCond[T] {
+	q.offset = offset
 	return q
 }
 

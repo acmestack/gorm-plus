@@ -309,6 +309,14 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 		if q.havingBuilder.Len() > 0 {
 			resultDb.Having(q.havingBuilder.String(), q.havingArgs...)
 		}
+
+		if q.limit != nil {
+			resultDb.Limit(*q.limit)
+		}
+
+		if q.offset != 0 {
+			resultDb.Offset(q.offset)
+		}
 	}
 	return resultDb
 }

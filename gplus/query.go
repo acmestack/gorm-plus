@@ -45,14 +45,57 @@ type QueryCond[T any] struct {
 // NewQuery 构建查询条件
 func NewQuery[T any]() (*QueryCond[T], *T) {
 	q := &QueryCond[T]{}
-	return q, q.buildColumnNameMap()
+
+	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
+	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
+		return q, model.(*T)
+	}
+	m := new(T)
+	Cache(m)
+	return q, m
+}
+
+// NewQueryModel 构建查询条件
+func NewQueryModel[T any, R any]() (*QueryCond[T], *T, *R) {
+	q := &QueryCond[T]{}
+	var t *T
+	var r *R
+	entityTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
+	if model, ok := modelInstanceCache.Load(entityTypeStr); ok {
+		t = model.(*T)
+	}
+
+	modelTypeStr := reflect.TypeOf((*R)(nil)).Elem().String()
+	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
+		r = model.(*R)
+	}
+
+	if t == nil {
+		t = new(T)
+		Cache(t)
+	}
+
+	if r == nil {
+		r = new(R)
+		Cache(r)
+	}
+
+	return q, t, r
 }
 
 // NewQueryMap 构建Map查询条件
 func NewQueryMap[T any]() (*QueryCond[T], *T) {
 	q := &QueryCond[T]{}
+
+	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
+	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
+		return q, model.(*T)
+	}
+	m := new(T)
+	Cache(m)
+
 	q.ConditionMap = make(map[any]any)
-	return q, q.buildColumnNameMap()
+	return q, m
 }
 
 // Eq 等于 =
@@ -295,17 +338,6 @@ func (q *QueryCond[T]) buildOrder(orderType string, columns ...string) {
 		q.OrderBuilder.WriteString(" ")
 		q.OrderBuilder.WriteString(orderType)
 	}
-}
-
-func (q *QueryCond[T]) buildColumnNameMap() *T {
-	// first try to load from cache
-	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
-	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
-		return model.(*T)
-	}
-	model := new(T)
-	Cache(model, globalDb.Config.NamingStrategy)
-	return model
 }
 
 func getColumnName(v any) string {

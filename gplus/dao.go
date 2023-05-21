@@ -45,7 +45,7 @@ type Dao[T any] struct{}
 
 func (dao Dao[T]) NewQuery() (*QueryCond[T], *T) {
 	q := &QueryCond[T]{}
-	return q, q.buildColumnNameMap()
+	return q, nil
 }
 
 func NewPage[T any](current, size int) *Page[T] {

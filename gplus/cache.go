@@ -31,30 +31,43 @@ var columnNameCache sync.Map
 var modelInstanceCache sync.Map
 
 // Cache 缓存实体对象所有的字段名
-func Cache(model any, namingStrategy ...schema.Namer) {
-	valueOf := reflect.ValueOf(model).Elem()
-	typeOf := reflect.TypeOf(model).Elem()
+func Cache(models ...any) {
+	for _, model := range models {
+		valueOf := reflect.ValueOf(model).Elem()
+		typeOf := reflect.TypeOf(model).Elem()
 
-	for i := 0; i < valueOf.NumField(); i++ {
-		field := typeOf.Field(i)
-		// 如果当前实体嵌入了其他实体，同样需要缓存它的字段名
-		if field.Anonymous {
-			// 如果存在多重嵌套，通过递归方式获取他们的字段名
-			subFieldMap := getSubFieldColumnNameMap(valueOf, field)
-			for key, value := range subFieldMap {
-				columnNameCache.Store(key, value)
+		for i := 0; i < valueOf.NumField(); i++ {
+			field := typeOf.Field(i)
+			// 如果当前实体嵌入了其他实体，同样需要缓存它的字段名
+			if field.Anonymous {
+				// 如果存在多重嵌套，通过递归方式获取他们的字段名
+				subFieldMap := getSubFieldColumnNameMap(valueOf, field)
+				for key, value := range subFieldMap {
+					columnNameCache.Store(key, value)
+				}
+			} else {
+				// 获取对象字段指针值
+				pointer := valueOf.Field(i).Addr().Pointer()
+				name := parseColumnName(field)
+				columnNameCache.Store(pointer, name)
 			}
-		} else {
-			// 获取对象字段指针值
-			pointer := valueOf.Field(i).Addr().Pointer()
-			name := parseColumnName(field, namingStrategy...)
-			columnNameCache.Store(pointer, name)
 		}
-	}
 
-	// 缓存对象
-	modelTypeStr := reflect.TypeOf(model).Elem().String()
-	modelInstanceCache.Store(modelTypeStr, model)
+		// 缓存对象
+		modelTypeStr := reflect.TypeOf(model).Elem().String()
+		modelInstanceCache.Store(modelTypeStr, model)
+	}
+}
+
+// GetModel 获取
+func GetModel[T any]() *T {
+	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
+	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
+		return model.(*T)
+	}
+	t := new(T)
+	Cache(t)
+	return t
 }
 
 // 递归获取嵌套字段名
@@ -83,17 +96,11 @@ func getSubFieldColumnNameMap(valueOf reflect.Value, field reflect.StructField) 
 }
 
 // 获取字段名称
-func parseColumnName(field reflect.StructField, namingStrategy ...schema.Namer) string {
+func parseColumnName(field reflect.StructField) string {
 	tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
 	name, ok := tagSetting["COLUMN"]
 	if ok {
 		return name
 	}
-
-	if len(namingStrategy) > 0 {
-		return namingStrategy[0].ColumnName("", field.Name)
-	}
-
-	strategy := schema.NamingStrategy{}
-	return strategy.ColumnName("", field.Name)
+	return globalDb.Config.NamingStrategy.ColumnName("", field.Name)
 }

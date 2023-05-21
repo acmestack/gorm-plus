@@ -32,4 +32,10 @@ const (
 	Between = "BETWEEN"
 	Desc    = "DESC"
 	Asc     = "ASC"
+	As      = "AS"
+	SUM     = "SUM"
+	AVG     = "AVG"
+	MAX     = "MAX"
+	MIN     = "MIN"
+	COUNT   = "COUNT"
 )

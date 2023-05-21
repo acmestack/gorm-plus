@@ -102,7 +102,7 @@ func DeleteByIds[T any](ids any, opts ...OptionFunc) *gorm.DB {
 func Delete[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 	db := getDb(opts...)
 	var entity T
-	resultDb := db.Where(q.QueryBuilder.String(), q.QueryArgs...).Delete(&entity)
+	resultDb := db.Where(q.queryBuilder.String(), q.queryArgs...).Delete(&entity)
 	return resultDb
 }
 
@@ -114,7 +114,7 @@ func DeleteByMap[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 		q.Eq(columnName, v)
 	}
 	var entity T
-	resultDb := db.Where(q.QueryBuilder.String(), q.QueryArgs...).Delete(&entity)
+	resultDb := db.Where(q.queryBuilder.String(), q.queryArgs...).Delete(&entity)
 	return resultDb
 }
 
@@ -128,7 +128,7 @@ func UpdateById[T any](entity *T, opts ...OptionFunc) *gorm.DB {
 // Update 根据 Map 更新
 func Update[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 	db := getDb(opts...)
-	resultDb := db.Model(new(T)).Where(q.QueryBuilder.String(), q.QueryArgs...).Updates(&q.UpdateMap)
+	resultDb := db.Model(new(T)).Where(q.queryBuilder.String(), q.queryArgs...).Updates(&q.updateMap)
 	return resultDb
 }
 
@@ -287,27 +287,27 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 	db := getDb(opts...)
 	resultDb := db.Model(new(T))
 	if q != nil {
-		if len(q.DistinctColumns) > 0 {
-			resultDb.Distinct(q.DistinctColumns)
+		if len(q.distinctColumns) > 0 {
+			resultDb.Distinct(q.distinctColumns)
 		}
 
-		if len(q.SelectColumns) > 0 {
-			resultDb.Select(q.SelectColumns)
+		if len(q.selectColumns) > 0 {
+			resultDb.Select(q.selectColumns)
 		}
 
-		if q.QueryBuilder.Len() > 0 {
+		if q.queryBuilder.Len() > 0 {
 
-			if q.AndBracketBuilder.Len() > 0 {
-				q.QueryArgs = append(q.QueryArgs, q.AndBracketArgs...)
-				q.QueryBuilder.WriteString(q.AndBracketBuilder.String())
+			if q.andBracketBuilder.Len() > 0 {
+				q.queryArgs = append(q.queryArgs, q.andBracketArgs...)
+				q.queryBuilder.WriteString(q.andBracketBuilder.String())
 			}
 
-			if q.OrBracketBuilder.Len() > 0 {
-				q.QueryArgs = append(q.QueryArgs, q.OrBracketArgs...)
-				q.QueryBuilder.WriteString(q.OrBracketBuilder.String())
+			if q.orBracketBuilder.Len() > 0 {
+				q.queryArgs = append(q.queryArgs, q.orBracketArgs...)
+				q.queryBuilder.WriteString(q.orBracketBuilder.String())
 			}
 
-			resultDb.Where(q.QueryBuilder.String(), q.QueryArgs...)
+			resultDb.Where(q.queryBuilder.String(), q.queryArgs...)
 		}
 
 		if len(q.ConditionMap) > 0 {
@@ -319,16 +319,16 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 			resultDb.Where(condMap)
 		}
 
-		if q.OrderBuilder.Len() > 0 {
-			resultDb.Order(q.OrderBuilder.String())
+		if q.orderBuilder.Len() > 0 {
+			resultDb.Order(q.orderBuilder.String())
 		}
 
-		if q.GroupBuilder.Len() > 0 {
-			resultDb.Group(q.GroupBuilder.String())
+		if q.groupBuilder.Len() > 0 {
+			resultDb.Group(q.groupBuilder.String())
 		}
 
-		if q.HavingBuilder.Len() > 0 {
-			resultDb.Having(q.HavingBuilder.String(), q.HavingArgs...)
+		if q.havingBuilder.Len() > 0 {
+			resultDb.Having(q.havingBuilder.String(), q.havingArgs...)
 		}
 	}
 	return resultDb

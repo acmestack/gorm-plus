@@ -25,20 +25,20 @@ import (
 )
 
 type QueryCond[T any] struct {
-	SelectColumns     []string
-	DistinctColumns   []string
-	QueryBuilder      strings.Builder
-	OrBracketBuilder  strings.Builder
-	OrBracketArgs     []any
-	AndBracketBuilder strings.Builder
-	AndBracketArgs    []any
-	QueryArgs         []any
-	OrderBuilder      strings.Builder
-	GroupBuilder      strings.Builder
-	HavingBuilder     strings.Builder
-	HavingArgs        []any
-	LastCond          string
-	UpdateMap         map[string]any
+	selectColumns     []string
+	distinctColumns   []string
+	queryBuilder      strings.Builder
+	orBracketBuilder  strings.Builder
+	orBracketArgs     []any
+	andBracketBuilder strings.Builder
+	andBracketArgs    []any
+	queryArgs         []any
+	orderBuilder      strings.Builder
+	groupBuilder      strings.Builder
+	havingBuilder     strings.Builder
+	havingArgs        []any
+	lastCond          string
+	updateMap         map[string]any
 	ConditionMap      map[any]any
 }
 
@@ -167,7 +167,7 @@ func (q *QueryCond[T]) IsNull(column any) *QueryCond[T] {
 	columnName := getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s is null", columnName)
-	q.QueryBuilder.WriteString(cond)
+	q.queryBuilder.WriteString(cond)
 	return q
 }
 
@@ -176,7 +176,7 @@ func (q *QueryCond[T]) IsNotNull(column any) *QueryCond[T] {
 	columnName := getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s is not null", columnName)
-	q.QueryBuilder.WriteString(cond)
+	q.queryBuilder.WriteString(cond)
 	return q
 }
 
@@ -197,8 +197,8 @@ func (q *QueryCond[T]) Between(column any, start, end any) *QueryCond[T] {
 	columnName := getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s ? and ? ", columnName, constants.Between)
-	q.QueryBuilder.WriteString(cond)
-	q.QueryArgs = append(q.QueryArgs, start, end)
+	q.queryBuilder.WriteString(cond)
+	q.queryArgs = append(q.queryArgs, start, end)
 	return q
 }
 
@@ -207,8 +207,8 @@ func (q *QueryCond[T]) NotBetween(column any, start, end any) *QueryCond[T] {
 	columnName := getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s %s ? and ? ", columnName, constants.Not, constants.Between)
-	q.QueryBuilder.WriteString(cond)
-	q.QueryArgs = append(q.QueryArgs, start, end)
+	q.queryBuilder.WriteString(cond)
+	q.queryArgs = append(q.queryArgs, start, end)
 	return q
 }
 
@@ -216,7 +216,7 @@ func (q *QueryCond[T]) NotBetween(column any, start, end any) *QueryCond[T] {
 func (q *QueryCond[T]) Distinct(columns ...any) *QueryCond[T] {
 	for _, v := range columns {
 		if columnName, ok := columnNameCache.Load(reflect.ValueOf(v).Pointer()); ok {
-			q.DistinctColumns = append(q.DistinctColumns, columnName.(string))
+			q.distinctColumns = append(q.distinctColumns, columnName.(string))
 		}
 	}
 	return q
@@ -224,31 +224,31 @@ func (q *QueryCond[T]) Distinct(columns ...any) *QueryCond[T] {
 
 // And 拼接 AND
 func (q *QueryCond[T]) And() *QueryCond[T] {
-	q.QueryBuilder.WriteString(constants.And)
-	q.QueryBuilder.WriteString(" ")
-	q.LastCond = constants.And
+	q.queryBuilder.WriteString(constants.And)
+	q.queryBuilder.WriteString(" ")
+	q.lastCond = constants.And
 	return q
 }
 
 // AndBracket 拼接 AND，括号包裹条件
 func (q *QueryCond[T]) AndBracket(bracketQuery *QueryCond[T]) *QueryCond[T] {
-	q.AndBracketBuilder.WriteString(constants.And + " " + constants.LeftBracket + bracketQuery.QueryBuilder.String() + constants.RightBracket + " ")
-	q.AndBracketArgs = append(q.AndBracketArgs, bracketQuery.QueryArgs...)
+	q.andBracketBuilder.WriteString(constants.And + " " + constants.LeftBracket + bracketQuery.queryBuilder.String() + constants.RightBracket + " ")
+	q.andBracketArgs = append(q.andBracketArgs, bracketQuery.queryArgs...)
 	return q
 }
 
 // Or 拼接 OR
 func (q *QueryCond[T]) Or() *QueryCond[T] {
-	q.QueryBuilder.WriteString(constants.Or)
-	q.QueryBuilder.WriteString(" ")
-	q.LastCond = constants.Or
+	q.queryBuilder.WriteString(constants.Or)
+	q.queryBuilder.WriteString(" ")
+	q.lastCond = constants.Or
 	return q
 }
 
 // OrBracket 拼接 OR，括号包裹条件
 func (q *QueryCond[T]) OrBracket(bracketQuery *QueryCond[T]) *QueryCond[T] {
-	q.OrBracketBuilder.WriteString(constants.Or + " " + constants.LeftBracket + bracketQuery.QueryBuilder.String() + constants.RightBracket + " ")
-	q.OrBracketArgs = append(q.OrBracketArgs, bracketQuery.QueryArgs...)
+	q.orBracketBuilder.WriteString(constants.Or + " " + constants.LeftBracket + bracketQuery.queryBuilder.String() + constants.RightBracket + " ")
+	q.orBracketArgs = append(q.orBracketArgs, bracketQuery.queryArgs...)
 	return q
 }
 
@@ -256,7 +256,7 @@ func (q *QueryCond[T]) OrBracket(bracketQuery *QueryCond[T]) *QueryCond[T] {
 func (q *QueryCond[T]) Select(columns ...any) *QueryCond[T] {
 	for _, v := range columns {
 		columnName := getColumnName(v)
-		q.SelectColumns = append(q.SelectColumns, columnName)
+		q.selectColumns = append(q.selectColumns, columnName)
 	}
 	return q
 }
@@ -287,28 +287,35 @@ func (q *QueryCond[T]) OrderByAsc(columns ...any) *QueryCond[T] {
 func (q *QueryCond[T]) Group(columns ...any) *QueryCond[T] {
 	for _, v := range columns {
 		columnName := getColumnName(v)
-		if q.GroupBuilder.Len() > 0 {
-			q.GroupBuilder.WriteString(constants.Comma)
+		if q.groupBuilder.Len() > 0 {
+			q.groupBuilder.WriteString(constants.Comma)
 		}
-		q.GroupBuilder.WriteString(columnName)
+		q.groupBuilder.WriteString(columnName)
 	}
 	return q
 }
 
 // Having HAVING SQl语句
 func (q *QueryCond[T]) Having(having string, args ...any) *QueryCond[T] {
-	q.HavingBuilder.WriteString(having)
-	q.HavingArgs = append(q.HavingArgs, args)
+	q.havingBuilder.WriteString(having)
+	if len(args) == 1 {
+		// 兼容function方法中in返回切片类型数据
+		if anies, ok := args[0].([]any); ok {
+			q.havingArgs = append(q.havingArgs, anies...)
+			return q
+		}
+	}
+	q.havingArgs = append(q.havingArgs, args...)
 	return q
 }
 
 // Set 设置更新的字段
 func (q *QueryCond[T]) Set(column any, val any) *QueryCond[T] {
 	columnName := getColumnName(column)
-	if q.UpdateMap == nil {
-		q.UpdateMap = make(map[string]any)
+	if q.updateMap == nil {
+		q.updateMap = make(map[string]any)
 	}
-	q.UpdateMap[columnName] = val
+	q.updateMap[columnName] = val
 	return q
 }
 
@@ -316,27 +323,27 @@ func (q *QueryCond[T]) addCond(column any, val any, condType string) {
 	columnName := getColumnName(column)
 	q.buildAndIfNeed()
 	cond := fmt.Sprintf("%s %s ?", columnName, condType)
-	q.QueryBuilder.WriteString(cond)
-	q.QueryBuilder.WriteString(" ")
-	q.LastCond = ""
-	q.QueryArgs = append(q.QueryArgs, val)
+	q.queryBuilder.WriteString(cond)
+	q.queryBuilder.WriteString(" ")
+	q.lastCond = ""
+	q.queryArgs = append(q.queryArgs, val)
 }
 
 func (q *QueryCond[T]) buildAndIfNeed() {
-	if q.LastCond != constants.And && q.LastCond != constants.Or && q.QueryBuilder.Len() > 0 {
-		q.QueryBuilder.WriteString(constants.And)
-		q.QueryBuilder.WriteString(" ")
+	if q.lastCond != constants.And && q.lastCond != constants.Or && q.queryBuilder.Len() > 0 {
+		q.queryBuilder.WriteString(constants.And)
+		q.queryBuilder.WriteString(" ")
 	}
 }
 
 func (q *QueryCond[T]) buildOrder(orderType string, columns ...string) {
 	for _, v := range columns {
-		if q.OrderBuilder.Len() > 0 {
-			q.OrderBuilder.WriteString(constants.Comma)
+		if q.orderBuilder.Len() > 0 {
+			q.orderBuilder.WriteString(constants.Comma)
 		}
-		q.OrderBuilder.WriteString(v)
-		q.OrderBuilder.WriteString(" ")
-		q.OrderBuilder.WriteString(orderType)
+		q.orderBuilder.WriteString(v)
+		q.orderBuilder.WriteString(" ")
+		q.orderBuilder.WriteString(orderType)
 	}
 }
 

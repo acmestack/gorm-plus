@@ -17,34 +17,74 @@
 
 package gplus
 
-import "github.com/acmestack/gorm-plus/constants"
+import (
+	"github.com/acmestack/gorm-plus/constants"
+)
 
-func As(columnName any, asName any) string {
-	return getColumnName(columnName) + " " + constants.As + " " + getColumnName(asName)
+type Function struct {
+	funStr string
 }
 
-func SumAs(columnName any, asName any) string {
-	return buildFunction(constants.SUM, getColumnName(columnName), getColumnName(asName))
+func (f *Function) As(asName any) string {
+	return f.funStr + " " + constants.As + " " + getColumnName(asName)
 }
 
-func AvgAs(columnName any, asName any) string {
-	return buildFunction(constants.AVG, getColumnName(columnName), getColumnName(asName))
+func (f *Function) Eq(value int64) (string, int64) {
+	return buildFunStr(f.funStr, constants.Eq, value)
 }
 
-func MaxAs(columnName any, asName any) string {
-	return buildFunction(constants.MAX, getColumnName(columnName), getColumnName(asName))
+func (f *Function) Ne(value int64) (string, int64) {
+	return buildFunStr(f.funStr, constants.Ne, value)
 }
 
-func MinAs(columnName any, asName any) string {
-	return buildFunction(constants.MIN, getColumnName(columnName), getColumnName(asName))
+func (f *Function) Gt(value int64) (string, int64) {
+	return buildFunStr(f.funStr, constants.Gt, value)
 }
 
-func CountAs(columnName any, asName any) string {
-	return buildFunction(constants.COUNT, getColumnName(columnName), getColumnName(asName))
+func (f *Function) Ge(value int64) (string, int64) {
+	return buildFunStr(f.funStr, constants.Ge, value)
 }
 
-func buildFunction(function string, columnNameStr string, asNameStr string) string {
-	columnNameStr = function + constants.LeftBracket + columnNameStr + constants.RightBracket +
-		" " + constants.As + " " + asNameStr
-	return columnNameStr
+func (f *Function) Lt(value int64) (string, int64) {
+	return buildFunStr(f.funStr, constants.Lt, value)
+}
+
+func (f *Function) Le(value int64) (string, int64) {
+	return buildFunStr(f.funStr, constants.Le, value)
+}
+
+func (f *Function) Between(start int64, end int64) (string, int64, int64) {
+	return f.funStr + " " + constants.Between + " ? and ?", start, end
+}
+
+func (f *Function) NotBetween(start int64, end int64) (string, int64, int64) {
+	return f.funStr + " " + constants.Not + " " + constants.Between + " ? and ?", start, end
+}
+
+func Sum(columnName any) *Function {
+	return &Function{funStr: addBracket(constants.SUM, getColumnName(columnName))}
+}
+
+func Avg(columnName any) *Function {
+	return &Function{funStr: addBracket(constants.AVG, getColumnName(columnName))}
+}
+
+func Max(columnName any) *Function {
+	return &Function{funStr: addBracket(constants.MAX, getColumnName(columnName))}
+}
+
+func Min(columnName any) *Function {
+	return &Function{funStr: addBracket(constants.MIN, getColumnName(columnName))}
+}
+
+func Count(columnName any) *Function {
+	return &Function{funStr: addBracket(constants.COUNT, getColumnName(columnName))}
+}
+
+func addBracket(function string, columnNameStr string) string {
+	return function + constants.LeftBracket + columnNameStr + constants.RightBracket
+}
+
+func buildFunStr(funcStr string, typeStr string, value int64) (string, int64) {
+	return funcStr + " " + typeStr + " ?", value
 }

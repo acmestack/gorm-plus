@@ -19,6 +19,7 @@ package gplus
 
 import (
 	"github.com/acmestack/gorm-plus/constants"
+	"strings"
 )
 
 type Function struct {
@@ -51,6 +52,18 @@ func (f *Function) Lt(value int64) (string, int64) {
 
 func (f *Function) Le(value int64) (string, int64) {
 	return buildFunStr(f.funStr, constants.Le, value)
+}
+
+func (f *Function) In(values ...any) (string, []any) {
+	// 构建占位符
+	placeholder := buildPlaceholder(values)
+	return f.funStr + " " + constants.In + placeholder.String(), values
+}
+
+func (f *Function) NotIn(values ...any) (string, []any) {
+	// 构建占位符
+	placeholder := buildPlaceholder(values)
+	return f.funStr + " " + constants.Not + " " + constants.In + placeholder.String(), values
 }
 
 func (f *Function) Between(start int64, end int64) (string, int64, int64) {
@@ -87,4 +100,19 @@ func addBracket(function string, columnNameStr string) string {
 
 func buildFunStr(funcStr string, typeStr string, value int64) (string, int64) {
 	return funcStr + " " + typeStr + " ?", value
+}
+
+func buildPlaceholder(values []any) strings.Builder {
+	var placeholder strings.Builder
+	placeholder.WriteString(constants.LeftBracket)
+	for i := 0; i < len(values); i++ {
+		if i == len(values)-1 {
+			placeholder.WriteString("?")
+			placeholder.WriteString(constants.RightBracket)
+			break
+		}
+		placeholder.WriteString("?")
+		placeholder.WriteString(",")
+	}
+	return placeholder
 }

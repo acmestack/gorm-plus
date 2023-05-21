@@ -298,6 +298,13 @@ func (q *QueryCond[T]) Group(columns ...any) *QueryCond[T] {
 // Having HAVING SQl语句
 func (q *QueryCond[T]) Having(having string, args ...any) *QueryCond[T] {
 	q.havingBuilder.WriteString(having)
+	if len(args) == 1 {
+		// 兼容function方法中in返回切片类型数据
+		if anies, ok := args[0].([]any); ok {
+			q.havingArgs = append(q.havingArgs, anies...)
+			return q
+		}
+	}
 	q.havingArgs = append(q.havingArgs, args...)
 	return q
 }

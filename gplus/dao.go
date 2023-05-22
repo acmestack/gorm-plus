@@ -143,6 +143,13 @@ func SelectOne[T any](q *QueryCond[T], opts ...OptionFunc) (*T, *gorm.DB) {
 	return &entity, resultDb.First(&entity)
 }
 
+// SelectOneModel 根据条件查询单条记录
+func SelectOneModel[T any, R any](q *QueryCond[T], opts ...OptionFunc) (*R, *gorm.DB) {
+	var entity R
+	resultDb := buildCondition(q, opts...)
+	return &entity, resultDb.First(&entity)
+}
+
 // Exists 根据条件判断记录是否存在
 func Exists[T any](q *QueryCond[T], opts ...OptionFunc) (bool, error) {
 	_, dbRes := SelectOne[T](q, opts...)

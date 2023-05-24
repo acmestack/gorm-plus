@@ -101,7 +101,7 @@ func getSubFieldColumnNameMap(valueOf reflect.Value, field reflect.StructField) 
 	return result
 }
 
-// 获取字段名称
+// 解析字段名称
 func parseColumnName(field reflect.StructField) string {
 	tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
 	name, ok := tagSetting["COLUMN"]
@@ -109,4 +109,23 @@ func parseColumnName(field reflect.StructField) string {
 		return name
 	}
 	return globalDb.Config.NamingStrategy.ColumnName("", field.Name)
+}
+
+func getColumnName(v any) string {
+	var columnName string
+	valueOf := reflect.ValueOf(v)
+	switch valueOf.Kind() {
+	case reflect.String:
+		return v.(string)
+	case reflect.Pointer:
+		if name, ok := columnNameCache.Load(valueOf.Pointer()); ok {
+			return name.(string)
+		}
+		// 如果是Function类型，解析字段名称
+		if reflect.TypeOf(v).Elem() == reflect.TypeOf((*Function)(nil)).Elem() {
+			f := v.(*Function)
+			return f.funStr
+		}
+	}
+	return columnName
 }

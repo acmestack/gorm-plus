@@ -342,22 +342,3 @@ func (q *QueryCond[T]) buildOrder(orderType string, columns ...string) {
 		q.orderBuilder.WriteString(orderType)
 	}
 }
-
-func getColumnName(v any) string {
-	var columnName string
-	valueOf := reflect.ValueOf(v)
-	switch valueOf.Kind() {
-	case reflect.String:
-		return v.(string)
-	case reflect.Pointer:
-		if name, ok := columnNameCache.Load(valueOf.Pointer()); ok {
-			return name.(string)
-		}
-		// 如果是Function类型，解析字段名称
-		if reflect.TypeOf(v).Elem() == reflect.TypeOf((*Function)(nil)).Elem() {
-			f := v.(*Function)
-			return f.funStr
-		}
-	}
-	return columnName
-}

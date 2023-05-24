@@ -143,49 +143,10 @@ func SelectOne[T any](q *QueryCond[T], opts ...OptionFunc) (*T, *gorm.DB) {
 	return &entity, resultDb.First(&entity)
 }
 
-// SelectOneModel 根据条件查询单条记录
-func SelectOneModel[T any, R any](q *QueryCond[T], opts ...OptionFunc) (*R, *gorm.DB) {
-	var entity R
-	resultDb := buildCondition(q, opts...)
-	return &entity, resultDb.First(&entity)
-}
-
-// Exists 根据条件判断记录是否存在
-func Exists[T any](q *QueryCond[T], opts ...OptionFunc) (bool, error) {
-	_, dbRes := SelectOne[T](q, opts...)
-	return dbRes.RowsAffected > 0, dbRes.Error
-}
-
 // SelectList 根据条件查询多条记录
 func SelectList[T any](q *QueryCond[T], opts ...OptionFunc) ([]*T, *gorm.DB) {
 	resultDb := buildCondition(q, opts...)
 	var results []*T
-	resultDb.Find(&results)
-	return results, resultDb
-}
-
-// SelectListModel 根据条件查询多条记录
-// 第一个泛型代表数据库表实体
-// 第二个泛型代表返回记录实体
-func SelectListModel[T any, R any](q *QueryCond[T], opts ...OptionFunc) ([]*R, *gorm.DB) {
-	resultDb := buildCondition(q, opts...)
-	var results []*R
-	resultDb.Scan(&results)
-	return results, resultDb
-}
-
-// SelectListByMap 根据 Map 查询多条记录
-func SelectListByMap[T any](q *QueryCond[T], opts ...OptionFunc) ([]*T, *gorm.DB) {
-	resultDb := buildCondition(q, opts...)
-	var results []*T
-	resultDb.Find(&results)
-	return results, resultDb
-}
-
-// SelectListMaps 根据条件查询，返回Map记录
-func SelectListMaps[T any](q *QueryCond[T], opts ...OptionFunc) ([]map[string]any, *gorm.DB) {
-	resultDb := buildCondition(q, opts...)
-	var results []map[string]any
 	resultDb.Find(&results)
 	return results, resultDb
 }
@@ -210,52 +171,49 @@ func SelectPage[T any](page *Page[T], q *QueryCond[T], opts ...OptionFunc) (*Pag
 	return page, resultDb
 }
 
-// SelectPageModel 根据条件分页查询记录
-// 第一个泛型代表数据库表实体
-// 第二个泛型代表返回记录实体
-func SelectPageModel[T any, R any](page *Page[R], q *QueryCond[T], opts ...OptionFunc) (*Page[R], *gorm.DB) {
-	option := getOption(opts)
-	// 如果需要分页忽略总数，不查询总数
-	if !option.IgnoreTotal {
-		total, countDb := SelectCount[T](q, opts...)
-		if countDb.Error != nil {
-			return page, countDb
-		}
-		page.Total = total
-	}
-	resultDb := buildCondition(q, opts...)
-	var results []*R
-	resultDb.Scopes(paginate(page)).Scan(&results)
-	page.Records = results
-	return page, resultDb
-}
-
-// SelectPageMaps 根据条件分页查询，返回分页Map记录
-func SelectPageMaps[T any](page *Page[map[string]any], q *QueryCond[T], opts ...OptionFunc) (*Page[map[string]any], *gorm.DB) {
-	option := getOption(opts)
-	// 如果需要分页忽略总数，不查询总数
-	if !option.IgnoreTotal {
-		total, countDb := SelectCount[T](q, opts...)
-		if countDb.Error != nil {
-			return page, countDb
-		}
-		page.Total = total
-	}
-	resultDb := buildCondition(q, opts...)
-	var results []map[string]any
-	resultDb.Scopes(paginate(page)).Find(&results)
-	for _, m := range results {
-		page.Records = append(page.Records, &m)
-	}
-	return page, resultDb
-}
-
 // SelectCount 根据条件查询记录数量
 func SelectCount[T any](q *QueryCond[T], opts ...OptionFunc) (int64, *gorm.DB) {
 	var count int64
 	resultDb := buildCondition(q, opts...)
 	resultDb.Count(&count)
 	return count, resultDb
+}
+
+// Exists 根据条件判断记录是否存在
+func Exists[T any](q *QueryCond[T], opts ...OptionFunc) (bool, error) {
+	_, dbRes := SelectOne[T](q, opts...)
+	return dbRes.RowsAffected > 0, dbRes.Error
+}
+
+// SelectPageGeneric 根据传入的泛型封装分页记录
+// 第一个泛型代表数据库表实体
+// 第二个泛型代表返回记录实体
+func SelectPageGeneric[T any, R any](page *Page[R], q *QueryCond[T], opts ...OptionFunc) (*Page[R], *gorm.DB) {
+	option := getOption(opts)
+	// 如果需要分页忽略总数，不查询总数
+	if !option.IgnoreTotal {
+		total, countDb := SelectCount[T](q, opts...)
+		if countDb.Error != nil {
+			return page, countDb
+		}
+		page.Total = total
+	}
+	resultDb := buildCondition(q, opts...)
+	var results []R
+	resultDb.Scopes(paginate(page)).Scan(&results)
+	for _, m := range results {
+		page.Records = append(page.Records, &m)
+	}
+	return page, resultDb
+}
+
+// SelectGeneric 根据传入的泛型封装记录
+// 第一个泛型代表数据库表实体
+// 第二个泛型代表返回记录实体
+func SelectGeneric[T any, R any](q *QueryCond[T], opts ...OptionFunc) (R, *gorm.DB) {
+	var entity R
+	resultDb := buildCondition(q, opts...)
+	return entity, resultDb.Find(&entity)
 }
 
 func Begin(opts ...*sql.TxOptions) *gorm.DB {

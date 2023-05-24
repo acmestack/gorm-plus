@@ -109,8 +109,24 @@ func Delete[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 // UpdateById 根据 ID 更新
 func UpdateById[T any](entity *T, opts ...OptionFunc) *gorm.DB {
 	db := getDb(opts...)
+
+	// 如果用户没有设置选择更新的字段，默认更新所有的字段，包括零值更新
+	updateAllIfNeed(entity, opts, db)
+
 	resultDb := db.Model(entity).Updates(entity)
 	return resultDb
+}
+
+func updateAllIfNeed(entity any, opts []OptionFunc, db *gorm.DB) {
+	option := getOption(opts)
+	if len(option.Selects) == 0 {
+		columnNameMap := getColumnNameMap(entity)
+		var columnNames []string
+		for _, columnName := range columnNameMap {
+			columnNames = append(columnNames, columnName)
+		}
+		db.Select(columnNames)
+	}
 }
 
 // Update 根据 Map 更新

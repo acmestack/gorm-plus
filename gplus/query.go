@@ -201,9 +201,7 @@ func (q *QueryCond[T]) NotBetween(column any, start, end any) *QueryCond[T] {
 // Distinct 去除重复字段值
 func (q *QueryCond[T]) Distinct(columns ...any) *QueryCond[T] {
 	for _, v := range columns {
-		if columnName, ok := columnNameCache.Load(reflect.ValueOf(v).Pointer()); ok {
-			q.distinctColumns = append(q.distinctColumns, columnName.(string))
-		}
+		q.distinctColumns = append(q.distinctColumns, getColumnName(v))
 	}
 	return q
 }

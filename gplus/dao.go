@@ -213,7 +213,7 @@ func SelectPageGeneric[T any, R any](page *Page[R], q *QueryCond[T], opts ...Opt
 func SelectGeneric[T any, R any](q *QueryCond[T], opts ...OptionFunc) (R, *gorm.DB) {
 	var entity R
 	resultDb := buildCondition(q, opts...)
-	return entity, resultDb.Find(&entity)
+	return entity, resultDb.Scan(&entity)
 }
 
 func Begin(opts ...*sql.TxOptions) *gorm.DB {

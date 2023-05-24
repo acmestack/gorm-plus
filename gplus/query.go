@@ -350,10 +350,15 @@ func getColumnName(v any) string {
 	valueOf := reflect.ValueOf(v)
 	switch valueOf.Kind() {
 	case reflect.String:
-		columnName = v.(string)
+		return v.(string)
 	case reflect.Pointer:
 		if name, ok := columnNameCache.Load(valueOf.Pointer()); ok {
-			columnName = name.(string)
+			return name.(string)
+		}
+		// 如果是Function类型，解析字段名称
+		if reflect.TypeOf(v).Elem() == reflect.TypeOf((*Function)(nil)).Elem() {
+			f := v.(*Function)
+			return f.funStr
 		}
 	}
 	return columnName

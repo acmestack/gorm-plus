@@ -100,9 +100,9 @@ func DeleteByIds[T any](ids any, opts ...OptionFunc) *gorm.DB {
 
 // Delete 根据条件删除记录
 func Delete[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
-	db := getDb(opts...)
 	var entity T
-	resultDb := db.Where(q.queryBuilder.String(), q.queryArgs...).Delete(&entity)
+	resultDb := buildCondition[T](q, opts...)
+	resultDb.Delete(&entity)
 	return resultDb
 }
 

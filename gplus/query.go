@@ -201,9 +201,7 @@ func (q *QueryCond[T]) NotBetween(column any, start, end any) *QueryCond[T] {
 // Distinct 去除重复字段值
 func (q *QueryCond[T]) Distinct(columns ...any) *QueryCond[T] {
 	for _, v := range columns {
-		if columnName, ok := columnNameCache.Load(reflect.ValueOf(v).Pointer()); ok {
-			q.distinctColumns = append(q.distinctColumns, columnName.(string))
-		}
+		q.distinctColumns = append(q.distinctColumns, getColumnName(v))
 	}
 	return q
 }
@@ -343,18 +341,4 @@ func (q *QueryCond[T]) buildOrder(orderType string, columns ...string) {
 		q.orderBuilder.WriteString(" ")
 		q.orderBuilder.WriteString(orderType)
 	}
-}
-
-func getColumnName(v any) string {
-	var columnName string
-	valueOf := reflect.ValueOf(v)
-	switch valueOf.Kind() {
-	case reflect.String:
-		columnName = v.(string)
-	case reflect.Pointer:
-		if name, ok := columnNameCache.Load(valueOf.Pointer()); ok {
-			columnName = name.(string)
-		}
-	}
-	return columnName
 }

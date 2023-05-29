@@ -8,22 +8,103 @@ import (
 )
 
 func TestUpdateByIdName(t *testing.T) {
-	var expectSql = "INSERT INTO `Users` (`username`,`password`,`address`,`age`,`phone`,`score`,`dept`) VALUES ('afumu','123456','','18','','12','研发部门')"
+	var expectSql = "UPDATE `Users` SET `score`='100' WHERE `id` = '1'"
 	sessionDb := checkUpdateSql(t, expectSql)
-	var u = &User{ID: 1}
-	gplus.UpdateById(u, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+	var user = &User{ID: 1, Score: 100}
+	u := gplus.GetModel[User]()
+	gplus.UpdateById(user, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+}
 
+func TestUpdateZeroByIdName(t *testing.T) {
+	var expectSql = "UPDATE `Users` SET `username`='',`password`='',`address`='',`age`='0',`phone`='',`score`='100',`dept`='' WHERE `id` = '1'"
+	sessionDb := checkUpdateSql(t, expectSql)
+	var user = &User{ID: 1, Score: 100}
+	u := gplus.GetModel[User]()
+	gplus.UpdateZeroById(user, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+}
+
+func TestUpdate1Name(t *testing.T) {
+	var expectSql = "UPDATE `Users` SET `score`='100' WHERE id = '1'"
+	sessionDb := checkUpdateSql(t, expectSql)
+	query, u := gplus.NewQuery[User]()
+	query.Eq(&u.ID, 1).Set(&u.Score, 100)
+	gplus.Update(query, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+}
+
+func TestUpdate2Name(t *testing.T) {
+	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username = 'afumu' AND age = '18'"
+	sessionDb := checkUpdateSql(t, expectSql)
+	query, u := gplus.NewQuery[User]()
+	query.Eq(&u.Username, "afumu").Eq(&u.Age, 18).
+		Set(&u.Score, 100).
+		Set(&u.Address, "shanghai")
+	gplus.Update(query, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+}
+
+func TestUpdate3Name(t *testing.T) {
+	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username = 'afumu' OR age = '18'"
+	sessionDb := checkUpdateSql(t, expectSql)
+	query, u := gplus.NewQuery[User]()
+	query.Eq(&u.Username, "afumu").Or().Eq(&u.Age, 18).
+		Set(&u.Score, 100).
+		Set(&u.Address, "shanghai")
+	gplus.Update(query, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+}
+
+func TestUpdate4Name(t *testing.T) {
+	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username = 'afumu' OR (age = '18' AND score = '100' )"
+	sessionDb := checkUpdateSql(t, expectSql)
+	query, u := gplus.NewQuery[User]()
+	query.Eq(&u.Username, "afumu").Or(func(q *gplus.QueryCond[User]) {
+		q.Eq(&u.Age, 18).Eq(&u.Score, 100)
+	}).
+		Set(&u.Score, 100).
+		Set(&u.Address, "shanghai")
+	gplus.Update(query, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+}
+
+func TestUpdate5Name(t *testing.T) {
+	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username = 'afumu' AND (age = '18' OR score = '100' )"
+	sessionDb := checkUpdateSql(t, expectSql)
+	query, u := gplus.NewQuery[User]()
+	query.Eq(&u.Username, "afumu").
+		And(func(q *gplus.QueryCond[User]) {
+			q.Eq(&u.Age, 18).Or().Eq(&u.Score, 100)
+		}).
+		Set(&u.Score, 100).
+		Set(&u.Address, "shanghai")
+	gplus.Update(query, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+}
+
+func TestUpdate6Name(t *testing.T) {
+	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username <> 'afumu'"
+	sessionDb := checkUpdateSql(t, expectSql)
+	query, u := gplus.NewQuery[User]()
+	query.Ne(&u.Username, "afumu").
+		Set(&u.Score, 100).
+		Set(&u.Address, "shanghai")
+	gplus.Update(query, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+}
+
+func TestUpdate7Name(t *testing.T) {
+	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username is null"
+	sessionDb := checkUpdateSql(t, expectSql)
+	query, u := gplus.NewQuery[User]()
+	query.IsNull(&u.Username).
+		Set(&u.Score, 100).
+		Set(&u.Address, "shanghai")
+	gplus.Update(query, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
 }
 
 func checkUpdateSql(t *testing.T, expect string) *gorm.DB {
 	expect = strings.TrimSpace(expect)
 	sessionDb := gormDb.Session(&gorm.Session{DryRun: true})
-	callback := sessionDb.Callback().Update().Before("gorm:update")
+	callback := sessionDb.Callback().Update().After("gorm:update")
 	callback.Register("print_sql", func(db *gorm.DB) {
 		sql := buildSql(db)
 		sql = strings.TrimSpace(sql)
 		if sql != expect {
-			t.Errorf("errors happened  when insert expect: %v, got %v", expect, sql)
+			t.Errorf("errors happened  when update expect: %v, got %v", expect, sql)
 		}
 		callback.Remove("print_sql")
 	})

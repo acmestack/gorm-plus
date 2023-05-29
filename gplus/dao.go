@@ -106,8 +106,15 @@ func Delete[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 	return resultDb
 }
 
-// UpdateById 根据 ID 更新
+// UpdateById 根据 ID 更新,默认零值不更新
 func UpdateById[T any](entity *T, opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
+	resultDb := db.Model(entity).Updates(entity)
+	return resultDb
+}
+
+// UpdateZeroById 根据 ID 零值更新
+func UpdateZeroById[T any](entity *T, opts ...OptionFunc) *gorm.DB {
 	db := getDb(opts...)
 
 	// 如果用户没有设置选择更新的字段，默认更新所有的字段，包括零值更新
@@ -131,8 +138,8 @@ func updateAllIfNeed(entity any, opts []OptionFunc, db *gorm.DB) {
 
 // Update 根据 Map 更新
 func Update[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
-	db := getDb(opts...)
-	resultDb := db.Model(new(T)).Where(q.queryBuilder.String(), q.queryArgs...).Updates(&q.updateMap)
+	resultDb := buildCondition[T](q, opts...)
+	resultDb.Updates(&q.updateMap)
 	return resultDb
 }
 

@@ -94,6 +94,10 @@ func Count(columnName any) *Function {
 	return &Function{funStr: addBracket(constants.COUNT, getColumnName(columnName))}
 }
 
+func As(columnName any, asName any) string {
+	return getColumnName(columnName) + " " + constants.As + " " + getColumnName(asName)
+}
+
 func addBracket(function string, columnNameStr string) string {
 	return function + constants.LeftBracket + columnNameStr + constants.RightBracket
 }

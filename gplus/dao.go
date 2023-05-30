@@ -203,9 +203,9 @@ func SelectCount[T any](q *QueryCond[T], opts ...OptionFunc) (int64, *gorm.DB) {
 }
 
 // Exists 根据条件判断记录是否存在
-func Exists[T any](q *QueryCond[T], opts ...OptionFunc) (bool, error) {
-	_, dbRes := SelectOne[T](q, opts...)
-	return dbRes.RowsAffected > 0, dbRes.Error
+func Exists[T any](q *QueryCond[T], opts ...OptionFunc) (bool, *gorm.DB) {
+	count, resultDb := SelectCount[T](q, opts...)
+	return count > 0, resultDb
 }
 
 // SelectPageGeneric 根据传入的泛型封装分页记录

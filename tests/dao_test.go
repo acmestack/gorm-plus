@@ -26,6 +26,7 @@ import (
 	"gorm.io/gorm/logger"
 	"reflect"
 	"sort"
+	"strconv"
 	"testing"
 )
 
@@ -294,6 +295,62 @@ func TestSelectPage(t *testing.T) {
 
 }
 
+func TestSelectPageGeneric2(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+
+	type UserVo struct {
+		ID       int64
+		Username string
+		Password string
+	}
+
+	query, model := gplus.NewQuery[User]()
+	page := gplus.NewPage[UserVo](1, 10)
+	query.Eq(&model.Username, users[0].Username).Or().Eq(&model.Username, users[5].Username)
+
+	resultPage, db := gplus.SelectPageGeneric[User, UserVo](page, query)
+	if db.Error != nil {
+		t.Errorf("errors happened when selectByIds : %v", db.Error)
+	}
+	if resultPage.Total != 2 {
+		t.Errorf("page total expects: %v, got %v", 2, resultPage.Total)
+	}
+
+	AssertObjEqual(t, resultPage.Records[0], users[0], "ID", "Username", "Password")
+	AssertObjEqual(t, resultPage.Records[1], users[5], "ID", "Username", "Password")
+
+}
+
+func TestSelectPageGeneric3(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+
+	query, model := gplus.NewQuery[User]()
+	page := gplus.NewPage[map[string]any](1, 10)
+	query.Eq(&model.Username, users[0].Username).Or().Eq(&model.Username, users[5].Username)
+
+	resultPage, db := gplus.SelectPageGeneric[User, map[string]any](page, query)
+	if db.Error != nil {
+		t.Errorf("errors happened when selectByIds : %v", db.Error)
+	}
+	if resultPage.Total != 2 {
+		t.Errorf("page total expects: %v, got %v", 2, resultPage.Total)
+	}
+
+	var userResult []*User
+	for _, userMap := range resultPage.RecordsMap {
+		user := &User{Username: userMap["username"].(string), Password: userMap["password"].(string)}
+		userResult = append(userResult, user)
+	}
+
+	AssertObjEqual(t, userResult[0], users[0], "Username", "Password")
+	AssertObjEqual(t, userResult[1], users[5], "Username", "Password")
+
+}
+
 func TestSelectCount(t *testing.T) {
 	deleteOldData()
 	users := getUsers()
@@ -415,7 +472,7 @@ func TestSelectGeneric4(t *testing.T) {
 	}
 }
 
-func TestSelectGeneric(t *testing.T) {
+func TestSelectGeneric5(t *testing.T) {
 	deleteOldData()
 	users := getUsers()
 	gplus.InsertBatch[User](users)
@@ -435,6 +492,65 @@ func TestSelectGeneric(t *testing.T) {
 	sort.Ints(allAges)
 	if !reflect.DeepEqual(allAges, ages) {
 		t.Errorf("errors happened when SelectGeneric")
+	}
+}
+
+func TestSelectGeneric6(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+	type UserVo struct {
+		Dept  string
+		Score int
+	}
+	var userMap = make(map[string]int)
+	for _, user := range users {
+		userMap[user.Dept] += user.Score
+	}
+	query, u := gplus.NewQuery[User]()
+	uvo := gplus.GetModel[UserVo]()
+	query.Select(&u.Dept, gplus.Sum(&u.Score).As(&uvo.Score)).Group(&u.Dept)
+	UserVos, resultDb := gplus.SelectGeneric[User, []UserVo](query)
+
+	if resultDb.Error != nil {
+		t.Errorf("errors happened when resultDb : %v", resultDb.Error)
+	}
+
+	for _, userVo := range UserVos {
+		score := userMap[userVo.Dept]
+		if userVo.Score != score {
+			t.Errorf("errors happened when SelectGeneric")
+		}
+	}
+}
+
+func TestSelectGeneric7(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+	var userMap = make(map[string]int)
+	for _, user := range users {
+		userMap[user.Dept] += user.Score
+	}
+	query, u := gplus.NewQuery[User]()
+	query.Select(&u.Dept, gplus.Sum(&u.Score).As("score")).Group(&u.Dept)
+	UserVos, resultDb := gplus.SelectGeneric[User, []map[string]any](query)
+
+	if resultDb.Error != nil {
+		t.Errorf("errors happened when resultDb : %v", resultDb.Error)
+	}
+
+	for _, umap := range UserVos {
+		scoreStr := umap["score"].(string)
+		score, err := strconv.Atoi(scoreStr)
+		if err != nil {
+			t.Errorf("errors happened when SelectGeneric")
+		}
+		dept := umap["dept"].(string)
+
+		if userMap[dept] != score {
+			t.Errorf("errors happened when SelectGeneric")
+		}
 	}
 }
 

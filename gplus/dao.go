@@ -35,10 +35,11 @@ func Init(db *gorm.DB) {
 }
 
 type Page[T any] struct {
-	Current int
-	Size    int
-	Total   int64
-	Records []*T
+	Current    int
+	Size       int
+	Total      int64
+	Records    []*T
+	RecordsMap []T
 }
 
 type Dao[T any] struct{}
@@ -222,10 +223,16 @@ func SelectPageGeneric[T any, R any](page *Page[R], q *QueryCond[T], opts ...Opt
 		page.Total = total
 	}
 	resultDb := buildCondition(q, opts...)
-	var results []R
-	resultDb.Scopes(paginate(page)).Scan(&results)
-	for _, m := range results {
-		page.Records = append(page.Records, &m)
+	var r R
+	switch any(r).(type) {
+	case map[string]any:
+		var results []R
+		resultDb.Scopes(paginate(page)).Scan(&results)
+		page.RecordsMap = results
+	default:
+		var results []*R
+		resultDb.Scopes(paginate(page)).Scan(&results)
+		page.Records = results
 	}
 	return page, resultDb
 }

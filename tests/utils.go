@@ -21,7 +21,9 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"go/ast"
+	"gorm.io/gorm"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -136,4 +138,12 @@ func AssertEqual(t *testing.T, got, expect interface{}) {
 func Now() *time.Time {
 	now := time.Now()
 	return &now
+}
+
+func buildSql(db *gorm.DB) string {
+	sql := db.Statement.SQL.String()
+	for _, value := range db.Statement.Vars {
+		sql = strings.Replace(sql, "?", fmt.Sprintf("'%v'", value), 1)
+	}
+	return sql
 }

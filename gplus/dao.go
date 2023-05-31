@@ -35,10 +35,11 @@ func Init(db *gorm.DB) {
 }
 
 type Page[T any] struct {
-	Current int
-	Size    int
-	Total   int64
-	Records []*T
+	Current    int
+	Size       int
+	Total      int64
+	Records    []*T
+	RecordsMap []T
 }
 
 type Dao[T any] struct{}
@@ -100,14 +101,21 @@ func DeleteByIds[T any](ids any, opts ...OptionFunc) *gorm.DB {
 
 // Delete 根据条件删除记录
 func Delete[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
-	db := getDb(opts...)
 	var entity T
-	resultDb := db.Where(q.queryBuilder.String(), q.queryArgs...).Delete(&entity)
+	resultDb := buildCondition[T](q, opts...)
+	resultDb.Delete(&entity)
 	return resultDb
 }
 
-// UpdateById 根据 ID 更新
+// UpdateById 根据 ID 更新,默认零值不更新
 func UpdateById[T any](entity *T, opts ...OptionFunc) *gorm.DB {
+	db := getDb(opts...)
+	resultDb := db.Model(entity).Updates(entity)
+	return resultDb
+}
+
+// UpdateZeroById 根据 ID 零值更新
+func UpdateZeroById[T any](entity *T, opts ...OptionFunc) *gorm.DB {
 	db := getDb(opts...)
 
 	// 如果用户没有设置选择更新的字段，默认更新所有的字段，包括零值更新
@@ -131,8 +139,8 @@ func updateAllIfNeed(entity any, opts []OptionFunc, db *gorm.DB) {
 
 // Update 根据 Map 更新
 func Update[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
-	db := getDb(opts...)
-	resultDb := db.Model(new(T)).Where(q.queryBuilder.String(), q.queryArgs...).Updates(&q.updateMap)
+	resultDb := buildCondition[T](q, opts...)
+	resultDb.Updates(&q.updateMap)
 	return resultDb
 }
 
@@ -196,9 +204,9 @@ func SelectCount[T any](q *QueryCond[T], opts ...OptionFunc) (int64, *gorm.DB) {
 }
 
 // Exists 根据条件判断记录是否存在
-func Exists[T any](q *QueryCond[T], opts ...OptionFunc) (bool, error) {
-	_, dbRes := SelectOne[T](q, opts...)
-	return dbRes.RowsAffected > 0, dbRes.Error
+func Exists[T any](q *QueryCond[T], opts ...OptionFunc) (bool, *gorm.DB) {
+	count, resultDb := SelectCount[T](q, opts...)
+	return count > 0, resultDb
 }
 
 // SelectPageGeneric 根据传入的泛型封装分页记录
@@ -215,10 +223,16 @@ func SelectPageGeneric[T any, R any](page *Page[R], q *QueryCond[T], opts ...Opt
 		page.Total = total
 	}
 	resultDb := buildCondition(q, opts...)
-	var results []R
-	resultDb.Scopes(paginate(page)).Scan(&results)
-	for _, m := range results {
-		page.Records = append(page.Records, &m)
+	var r R
+	switch any(r).(type) {
+	case map[string]any:
+		var results []R
+		resultDb.Scopes(paginate(page)).Scan(&results)
+		page.RecordsMap = results
+	default:
+		var results []*R
+		resultDb.Scopes(paginate(page)).Scan(&results)
+		page.Records = results
 	}
 	return page, resultDb
 }

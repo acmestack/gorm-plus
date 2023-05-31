@@ -70,7 +70,10 @@ func getColumnNameMap(model any) map[uintptr]string {
 func GetModel[T any]() *T {
 	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
 	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
-		return model.(*T)
+		m, isReal := model.(*T)
+		if isReal {
+			return m
+		}
 	}
 	t := new(T)
 	Cache(t)

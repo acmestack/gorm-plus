@@ -212,6 +212,7 @@ func TestUpdate(t *testing.T) {
 	if db.Error != nil {
 		t.Fatalf("errors happened when SelectById: %v", db.Error)
 	}
+	user.Score = 60
 	AssertObjEqual(t, newUser, user, "ID", "Username", "Password", "Address", "Age", "Phone", "Score", "Dept", "CreatedAt", "UpdatedAt")
 }
 
@@ -439,6 +440,8 @@ func TestSelectGeneric3(t *testing.T) {
 	}
 	query, u := gplus.NewQuery[User]()
 	uvo := gplus.GetModel[UserVo]()
+	model := gplus.GetModel[UserVo]()
+	fmt.Println(model)
 	query.Select(gplus.Sum(&u.Age).As(&uvo.TotalAge))
 	userVo, resultDb := gplus.SelectGeneric[User, UserVo](query)
 

@@ -1,449 +1,139 @@
-# Gorm-plus
+Gorm-Plus是Gorm的增强工具，它在保持Gorm原有特性的基础上，为开发者提供了开箱即用的增强功能。通过简化开发流程、提高效率，它为开发者带来了无与伦比的开发体验。如果您渴望尝试一款让开发变得轻松而高效的工具，Gorm-Plus将是您不可错过的选择。
 
-基于 Gorm-plus，详见[https://github.com/acmestack/gorm-plus]()
 
-Gorm-plus是基于Gorm的增强版，类似Mybatis-plus语法。
 
 ## 特性
 
-- [x] 无侵入，只做增强不做改变
-- [x] 强大的CRUD 操作，内置通用查询，不需要任何配置，即可构建复杂条件查询
-- [x] 支持指针字段形式查询，方便编写各类查询条件，无需再担心字段写错
-- [x] 支持主键自动生成
-- [x] 内置分页插件
+1. 无侵入、增强而非改变：Gorm-Plus以无侵入的方式对 Gorm 进行增强，保持原有特性的同时提供更多功能，让您无需担心兼容性问题。
+2. 强大的 CRUD 操作和通用查询：Gorm-Plus内置了强大的 CRUD 操作功能，并提供了简便的通用查询功能，无需繁琐的配置即可轻松构建复杂条件查询。
+3. 支持指针字段形式查询：通过支持指针字段形式查询，Gorm-Plus让编写各类查询条件变得更加便捷，再也不用担心因为字段写错而出现错误。
+4. 内置泛型查询和灵活的返回类型封装：Gorm-Plus内置了泛型查询功能，让您能够灵活封装返回类型，轻松应对各种查询需求。
+5. 内置分页插件：Gorm-Plus还提供了内置的分页插件，让分页操作变得简单而高效，让您能够轻松处理大量数据，并实现更好的用户体验。
 
-## 事务（未发版）
-- 在需要事务的场景，可以使用gplus.Begin()开启事务，获取*gorm.DB
-- 所有的dao方法，均支持传入*gorm.DB，后续的操作均以传入的为准
+## 快速上手
 
-## 预览
+现有一张 `Users` 表，其表结构如下：
+
+```SQL
+CREATE TABLE `users` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `password` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `address` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `age` bigint DEFAULT NULL,
+  `phone` varchar(11) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `score` bigint DEFAULT NULL,
+  `dept` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=407 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+```
+
+
+
+对应的数据如下：
+
+```SQL
+INSERT INTO `users` (`username`, `password`, `address`, `age`, `phone`, `score`, `dept`, `created_at`, `updated_at`)
+VALUES
+  ('张三', 'password1', '地址1', 25, '12345678901', 80, '部门1', NOW(), NOW()),
+  ('李四', 'password2', '地址2', 30, '12345678902', 90, '部门2', NOW(), NOW()),
+  ('王五', 'password3', '地址3', 35, '12345678903', 70, '部门1', NOW(), NOW()),
+  ('赵六', 'password4', '地址4', 28, '12345678904', 85, '部门2', NOW(), NOW()),
+  ('钱七', 'password5', '地址5', 32, '12345678905', 75, '部门1', NOW(), NOW());
+
+```
+
+
+
+## 开始使用
+
+下载Gorm-Plus
+
+```SQL
+ go get github.com/acmestack/gorm-plus
+```
+
+
 
 ```Go
-type Student struct {
-    ID        int
-    Name      string
-    Age       uint8
-    Email     string
-    Birthday  time.Time
-    CreatedAt time.Time
-    UpdatedAt time.Time
+package main
+
+import (
+  "github.com/acmestack/gorm-plus/gplus"
+  "gorm.io/driver/mysql"
+  "gorm.io/gorm"
+  "gorm.io/gorm/logger"
+  "log"
+  "time"
+)
+
+type User struct {
+  ID        int64
+  Username  string
+  Password  string
+  Address   string
+  Age       int
+  Phone     string
+  Score     int
+  Dept      string
+  CreatedAt time.Time
+  UpdatedAt time.Time
 }
 
 var gormDb *gorm.DB
 
 func init() {
-    dsn := "root:123456@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
-    var err error
-    gormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-        Logger: logger.Default.LogMode(logger.Info),
-    })
+  dsn := "root:123456@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
+  var err error
+  gormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+    Logger: logger.Default.LogMode(logger.Info),
+  })
+  if err != nil {
+    log.Println(err)
+  }
 
-	if err != nil {
-        log.Println(err)
-    }
-    gplus.Init(gormDb)
+  // 初始化gplus
+  gplus.Init(gormDb)
 }
 
 func main() {
-    var student Student
-    // 创建表
-    gormDb.AutoMigrate(student)
-
-    // 插入数据
-    studentItem := Student{Name: "zhangsan", Age: 18, Email: "123@11.com", Birthday: time.Now()}
-    gplus.Insert(&studentItem)
-
-    // 根据Id查询数据
-    studentResult, resultDb := gplus.SelectById[Student](studentItem.ID)
-    log.Printf("error:%v\n", resultDb.Error)
-    log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-    log.Printf("studentResult:%+v\n", studentResult)
-
-    // 根据条件查询
-    query, model := gplus.NewQuery[Student]()
-    query.Eq(&model.Name, "zhangsan")
-    studentResult, resultDb = gplus.SelectOne(query)
-    log.Printf("error:%v\n", resultDb.Error)
-    log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-    log.Printf("studentResult:%+v\n", studentResult)
-
-    // 根据Id更新
-    studentItem.Name = "lisi"
-    resultDb = gplus.UpdateById[Student](&studentItem)
-    log.Printf("error:%v\n", resultDb.Error)
-    log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-
-    // 根据条件更新
-    query, model = gplus.NewQuery[Student]()
-    query.Eq(&model.Name, "lisi").Set(&model.Age, 35)
-    resultDb = gplus.Update[Student](query)
-    log.Printf("error:%v\n", resultDb.Error)
-    log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-
-    // 根据Id删除
-    resultDb = gplus.DeleteById[Student](studentItem.ID)
-    log.Printf("error:%v\n", resultDb.Error)
-    log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-    
-    // 根据条件删除
-    query, model = gplus.NewQuery[Student]()
-    query.Eq(&model.Name, "zhangsan")
-    resultDb = gplus.Delete[Student](query)
-    log.Printf("error:%v\n", resultDb.Error)
-    log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
+  users, resultDb := gplus.SelectList[User](nil)
+  log.Println("error:", resultDb.Error)
+  log.Println("RowsAffected:", resultDb.RowsAffected)
+  for _, user := range users {
+    log.Println("user:", user)
+  }
 }
+
 ```
 
-## 使用
 
-### 定义表结构
+
+控制台输出：
 
 ```Go
-type Student struct {
-    ID        int
-    Name      string
-    Age       uint8
-    Email     string
-    Birthday  time.Time
-    CreatedAt time.Time
-    UpdatedAt time.Time
-}
-```
+2023/06/01 17:48:19 error: <nil>
+2023/06/01 17:48:19 RowsAffected: 5
+2023/06/01 17:48:19 user: &{1 张三 password1 地址1 25 12345678901 80 部门1 2023-06-01 17:48:11 +0800 CST 2023-06-01 17:48:11 +0800 CST}
+2023/06/01 17:48:19 user: &{2 李四 password2 地址2 30 12345678902 90 部门2 2023-06-01 17:48:11 +0800 CST 2023-06-01 17:48:11 +0800 CST}
+2023/06/01 17:48:19 user: &{3 王五 password3 地址3 35 12345678903 70 部门1 2023-06-01 17:48:11 +0800 CST 2023-06-01 17:48:11 +0800 CST}
+2023/06/01 17:48:19 user: &{4 赵六 password4 地址4 28 12345678904 85 部门2 2023-06-01 17:48:11 +0800 CST 2023-06-01 17:48:11 +0800 CST}
+2023/06/01 17:48:19 user: &{5 钱七 password5 地址5 32 12345678905 75 部门1 2023-06-01 17:48:11 +0800 CST 2023-06-01 17:48:11 +0800 CST}
 
-### 连接数据库
-
-和gorm的连接数据库的方式是一样的，只是多了一行 `gplus.Init(gormDb)`，通过它来初始化gorm-plus的连接。
-
-```Go
-var gormDb *gorm.DB
-
-func init() {
-    dsn := "root:root-abcd-1234@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
-    var err error
-    gormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-        Logger: logger.Default.LogMode(logger.Info),
-    })
-    if err != nil {
-        log.Println(err)
-    }
-    gplus.Init(gormDb)
-}
-```
-
-### 自动迁移
-
-```Go
-var student Student
-gormDb.AutoMigrate(student)
-```
-
-### 基础增删改查
-
-#### 插入一条数据
-
-```Go
-studentItem := Student{Name: "zhangsan", Age: 18, Email: "123@11.com", Birthday: time.Now()}
-gplus.Insert(&studentItem)
-```
-
-#### 插入多条数据
-
-```Go
-student1 := Student{Name: "zhangsan1", Age: 18, Email: "123@11.com", Birthday: time.Now()}
-student2 := Student{Name: "zhangsan2", Age: 18, Email: "123@11.com", Birthday: time.Now()}
-var students = []*Student{&student1, &student2}
-gplus.InsertBatch[Student](students)
-```
-
-#### 分批插入数据
-
-```Go
-student1 := Student{Name: "zhangsan1", Age: 18, Email: "123@11.com", Birthday: time.Now()}
-student2 := Student{Name: "zhangsan2", Age: 18, Email: "123@11.com", Birthday: time.Now()}
-student3 := Student{Name: "zhangsan3", Age: 18, Email: "123@11.com", Birthday: time.Now()}
-student4 := Student{Name: "zhangsan4", Age: 18, Email: "123@11.com", Birthday: time.Now()}
-var students = []*Student{&student1, &student2, &student3, &student4}
-// 每次插入2条数据
-gplus.InsertBatchSize[Student](students, 2)
-```
-
-#### 根据一个ID查询
-
-```Go
-student, resultDb := gplus.SelectById[Student](2)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-log.Printf("student:%+v\n", student)
-```
-
-#### 根据多个ID查询
-
-```Go
-var ids = []int{2, 3}
-students, resultDb := gplus.SelectByIds[Student](ids)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-for _, student := range students {
-    log.Printf("student:%+v\n", student)
-}
-```
-
-#### 根据条件查询一条数据
-
-```Go
-query, model := gplus.NewQuery[Student]()
-query.Eq(&model.Name, "zhangsan")
-student, resultDb := gplus.SelectOne(query)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-log.Printf("student:%v\n", student)
-```
-
-#### 根据条件查询多条数据
-
-```Go
-query, model := gplus.NewQuery[Student]()
-query.Eq(&model.Name, "zhangsan")
-students, resultDb := gplus.SelectList(query)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-for _, student := range students {
-    log.Printf("student:%v\n", student)
-}
-```
-
-#### 根据条件查询多条数据（泛型封装）
-
-有时候我们可能需要额外使用其他类型的接收数据，gplus也支持这种方式，通过传入第二个泛型参数来实现。
-
-```Go
-type StudentVo struct {
-    Name string
-    Age  int
-}
-query, model := gplus.NewQuery[Student]()
-query.Eq(&model.Name, "zhangsan")
-students, resultDb := gplus.SelectListModel[Student, StudentVo](query)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-for _, student := range students {
-    log.Printf("student:%v\n", student)
-}
-```
-
-#### 根据条件分页查询
-
-```Go
-query, model := gplus.NewQuery[Student]()
-page := gplus.NewPage[Student](1, 5)
-query.Eq(&model.Name, "zhangsan")
-page, resultDb := gplus.SelectPage(page, query)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-log.Printf("total:%v\n", page.Total)
-log.Printf("current:%v\n", page.Current)
-log.Printf("size:%v\n", page.Size)
-for _, student := range page.Records {
-    log.Printf("student:%v\n", student)
-}
-```
-
-#### 根据条件分页查询（泛型封装）
-
-```Go
-type StudentVo struct {
-    Name string
-    Age  int
-}
-query, model := gplus.NewQuery[Student]()
-page := gplus.NewPage[StudentVo](1, 5)
-query.Eq(&model.Name, "zhangsan")
-page, resultDb := gplus.SelectPageModel[Student, StudentVo](page, query)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-log.Printf("total:%v\n", page.Total)
-log.Printf("current:%v\n", page.Current)
-log.Printf("size:%v\n", page.Size)
-for _, student := range page.Records {
-    log.Printf("student:%v\n", student)
-}
-```
-
-#### 根据ID更新
-
-```Go
-student := Student{ID: 3, Name: "lisi"}
-student.Name = "lisi"
-resultDb := gplus.UpdateById[Student](&student)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-```
-
-#### 根据条件更新
-
-```Go
-query, model := gplus.NewQuery[Student]()
-query.Eq(&model.Name, "zhangsan").Set(&model.Age, 30)
-resultDb := gplus.Update[Student](query)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-```
-
-#### 根据ID删除
-
-```Go
-resultDb := gplus.DeleteById[Student](4)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-```
-
-#### 根据多个ID删除
-
-```Go
-var ids = []int{5, 6}
-resultDb := gplus.DeleteByIds[Student](ids)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-```
-
-#### 根据条件删除
-
-```Go
-query, model := gplus.NewQuery[Student]()
-query.Eq(&model.Name, "lisi")
-resultDb := gplus.Delete(query)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-```
-
-### 高级查询
-
-#### 条件构造器
-
-gorm-plus 提供了强大的条件构造器,通过构造器能够组合不同的查询条件。
-
-|方法名|操作|
-|-|-|
-|Eq|等于 |
-|Ne|不等于|
-|Gt|大于|
-|Ge|大于等于|
-|Lt|小于|
-|Le|小于等于|
-|Like|LIKE '%值%'|
-|NotLike|NOT LIKE '%值%'|
-|LikeLeft|LIKE '%值'|
-|LikeRight|LIKE '值%'|
-|IsNull|字段 IS NULL|
-|IsNotNull|字段 IS NOT NULL|
-|In|字段 IN (值1，值2)|
-|NotIn|字段 NOT IN (值1，值2)|
-|Between|字段 BETWEEN 值1 ADN 值2|
-|NotBetween|字段 NOT BETWEEN 值1 ADN 值2|
-
-
-#### 指针字段查询
-
-通过NewQuery函数返回的第二个参数model，我们可以使用指针的方式来指定要使用的字段，无需再担心字段名写错。
-
-```Go
-query, model := gplus.NewQuery[Student]()
-query.Eq(&model.Name, "zhangsan1")
-studentResult, resultDb := gplus.SelectOne(query)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-log.Printf("studentResult:%+v\n", studentResult)
-```
-
-#### Query泛型简化
-
-如果不希望每次创建Query对象的时候携带上泛型，我们可以提供一个全局的泛型Dao。
-
-```Go
-var dao gplus.Dao[Student]
-func main() {
-    query, model := dao.NewQuery()
-    query.Eq(&model.Name, "zhangsan")
-    list, resultDb := gplus.SelectList(query)
-    fmt.Println(resultDb.RowsAffected)
-    for _, v := range list {
-        marshal, _ := json.Marshal(v)
-        fmt.Println(string(marshal))
-    }
-}
-```
-
-我们也可以把`gplus.Dao`组合到我们自己定义的Dao对象中
-
-```Go
-type StudentDao struct {
-    gplus.Dao[Student]
-}
-var studentDao StudentDao
-func main() {
-    query, model := studentDao.NewQuery()
-    query.Eq(&model.Name, "zhangsan")
-    list, resultDb := gplus.SelectList(query)
-    fmt.Println(resultDb.RowsAffected)
-    for _, v := range list {
-        marshal, _ := json.Marshal(v)
-        fmt.Println(string(marshal))
-    }
-}
-```
-
-#### 查询指定字段
-
-通过Select来设置待查询的字段
-
-```Go
-query, model := gplus.NewQuery[Student]()
-query.Eq(&model.Name, "zhangsan1").Select(&model.Name)
-studentResult, resultDb := gplus.SelectOne(query)
-log.Printf("error:%v\n", resultDb.Error)
-log.Printf("RowsAffected:%v\n", resultDb.RowsAffected)
-log.Printf("studentResult:%+v\n", studentResult)
 ```
 
 
 
-#### 排序
+## 总结
 
-```Go
-query, model := gplus.NewQuery[Student]()
-query.Eq(&model.Name, "zhangsan1").OrderByAsc(&model.Age)
-students, resultDb := gplus.SelectList(query)
-log.Printf("error:%+v", resultDb.Error)
-fmt.Println("RowsAffected:", resultDb.RowsAffected)
-for _, student := range students {
-    log.Printf("student:%+v", student)
-}
-```
+从上述步骤中，我们可以看到集成`Gorm-Plus`非常简单。只需在初始化`Gorm`之后添加一行代码`gplus.Init(gormDb)`
 
-#### 事务（未发版）
+即可使用。不仅如此，使用`Gorm-Plus`也同样轻松，只需一行代码即可完成列表查询。
 
-```Go
-// 开启事务
-tx := gplus.Begin()
+然而，`Gorm-Plus`的强大功能远不止于此。
 
-// 使用defer，实现遇到错误时回滚
-defer tx.Rollback()
+更多文档请查看: [https://github.com/acmestack/gorm-plus/wiki](https://github.com/acmestack/gorm-plus/wiki)
 
-// 新增，传入tx
-student := Student{Name: "zhangsan", Age: 18, Email: "123@11.com", Birthday: time.Now()}
-result := gplus.Insert(&student, tx)
-...
-
-// 更新，传入tx
-query, model := gplus.NewQuery[Student]()
-query.Eq(&model.Name, "zhangsan").Set(&model.Age, 30)
-resultDb := gplus.Update[Student](query, tx)
-...
-
-// 查询，如果需要在事务中查询，则也需要传入tx
-resultStudent, db := gplus.SelectById[Student](student.ID, tx)
-...
-
-// 提交事务，否则数据库数据不更改
-tx.Commit()
-```

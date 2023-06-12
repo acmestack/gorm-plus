@@ -23,7 +23,7 @@ import (
 
 type User struct {
 	ID        int64
-	Username  string `gorm:"column:username"`
+	Username  string
 	Password  string
 	Address   string
 	Age       int

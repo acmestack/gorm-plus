@@ -9,8 +9,7 @@ type columnPointer struct {
 }
 
 func (cp *columnPointer) getSqlSegment() string {
-	// todo 通过反射获取字段名
-	return cp.column.(string)
+	return getColumnName(cp.column)
 }
 
 type sqlKeyword struct {

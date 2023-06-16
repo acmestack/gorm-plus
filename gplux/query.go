@@ -3,12 +3,18 @@ package gplux
 import (
 	"fmt"
 	"github.com/acmestack/gorm-plus/constants"
+	"reflect"
+	"strings"
 )
 
 type QueryCond[T any] struct {
+	selectColumns    []string
+	distinctColumns  []string
 	queryExpressions []any
+	groupBuilder     strings.Builder
 	queryArgs        []any
 	last             any
+	updateMap        map[string]any
 }
 
 func (q *QueryCond[T]) getSqlSegment() string {
@@ -18,8 +24,13 @@ func (q *QueryCond[T]) getSqlSegment() string {
 // NewQuery 构建查询条件
 func NewQuery[T any]() (*QueryCond[T], *T) {
 	q := &QueryCond[T]{}
+
+	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
+	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
+		return q, model.(*T)
+	}
 	m := new(T)
-	//gplus.Cache(m)
+	Cache(m)
 	return q, m
 }
 
@@ -123,27 +134,66 @@ func (q *QueryCond[T]) NotBetween(column any, start, end any) *QueryCond[T] {
 	return q
 }
 
+// Distinct 去除重复字段值
+func (q *QueryCond[T]) Distinct(columns ...any) *QueryCond[T] {
+	for _, v := range columns {
+		q.distinctColumns = append(q.distinctColumns, getColumnName(v))
+	}
+	return q
+}
+
+// Group 分组：GROUP BY 字段1,字段2
+func (q *QueryCond[T]) Group(columns ...any) *QueryCond[T] {
+	for _, v := range columns {
+		columnName := getColumnName(v)
+		if q.groupBuilder.Len() > 0 {
+			q.groupBuilder.WriteString(constants.Comma)
+		}
+		q.groupBuilder.WriteString(columnName)
+	}
+	return q
+}
+
 // And 拼接 AND
 func (q *QueryCond[T]) And(fn ...func(q *QueryCond[T])) *QueryCond[T] {
+	q.addExpression(&sqlKeyword{keyword: constants.And})
 	if len(fn) > 0 {
 		nestQuery := &QueryCond[T]{}
 		fn[0](nestQuery)
 		q.addExpression(nestQuery)
 		return q
 	}
-	q.addExpression(&sqlKeyword{keyword: constants.And})
 	return q
 }
 
 // Or 拼接 OR
 func (q *QueryCond[T]) Or(fn ...func(q *QueryCond[T])) *QueryCond[T] {
+	q.addExpression(&sqlKeyword{keyword: constants.Or})
 	if len(fn) > 0 {
 		nestQuery := &QueryCond[T]{}
 		fn[0](nestQuery)
 		q.addExpression(nestQuery)
 		return q
 	}
-	q.addExpression(&sqlKeyword{keyword: constants.Or})
+	return q
+}
+
+// Select 查询字段
+func (q *QueryCond[T]) Select(columns ...any) *QueryCond[T] {
+	for _, v := range columns {
+		columnName := getColumnName(v)
+		q.selectColumns = append(q.selectColumns, columnName)
+	}
+	return q
+}
+
+// Set 设置更新的字段
+func (q *QueryCond[T]) Set(column any, val any) *QueryCond[T] {
+	columnName := getColumnName(column)
+	if q.updateMap == nil {
+		q.updateMap = make(map[string]any)
+	}
+	q.updateMap[columnName] = val
 	return q
 }
 
@@ -153,62 +203,79 @@ func (q *QueryCond[T]) addExpression(sqlSegments ...SqlSegment) {
 		return
 	}
 
-	lastKeyword, isKeyword := q.last.(*sqlKeyword)
-	// 1.如果上一个不是keyword，并且表达式切片不为空，则添加and。
-	// 2.如果上一个值不是and或or,并且表达式切片不为空,则添加and。
-	if isNotKeyword(isKeyword, q.queryExpressions) || isLastNotAndOr(lastKeyword, isKeyword, q.queryExpressions) {
-		sk := sqlKeyword{keyword: constants.And}
-		q.queryExpressions = append(q.queryExpressions, &sk)
-	}
+	// 如果符合条件，则添加and。
+	q.addAndCondIfNeed()
 
 	for _, sqlSegment := range sqlSegments {
 		q.queryExpressions = append(q.queryExpressions, sqlSegment)
 	}
+
+	if len(sqlSegments) > 0 {
+		q.last = sqlSegments[len(sqlSegments)-1]
+	}
+}
+
+func (q *QueryCond[T]) addAndCondIfNeed() {
+	// 1.如果上一个不是keyword，并且表达式切片不为空，则添加and。
+	// 2.如果上一个值不是and或or,并且表达式切片不为空,则添加and。
+	lastKeyword, isKeyword := q.last.(*sqlKeyword)
+	if isNotKeyword(isKeyword, q.queryExpressions) || isLastNotAndOr(lastKeyword, isKeyword, q.queryExpressions) {
+		sk := sqlKeyword{keyword: constants.And}
+		q.queryExpressions = append(q.queryExpressions, &sk)
+		q.last = &sk
+	}
 }
 
 func (q *QueryCond[T]) handleSingle(sqlSegment SqlSegment) {
+	// 如果是QueryCond,则直接添加
+	queryCond, isQuery := sqlSegment.(*QueryCond[T])
+	if isQuery {
+		q.queryExpressions = append(q.queryExpressions, queryCond)
+		q.last = queryCond
+		return
+	}
+
 	// 如何是第一次设置，则不需要添加and(),or(),not(),防止用户首次设置条件错误
 	if len(q.queryExpressions) == 0 {
 		return
 	}
 
 	// 如果是not(),则直接添加
-	sk, ok := sqlSegment.(*sqlKeyword)
-	if ok && sk.keyword == constants.Not {
+	sk, isKeyword := sqlSegment.(*sqlKeyword)
+	if isKeyword && sk.keyword == constants.Not {
 		q.queryExpressions = append(q.queryExpressions, sqlSegment)
-		return
-	}
-
-	// 如果是QueryCond,则直接添加
-	queryCond, isQuery := sqlSegment.(*QueryCond[T])
-	if isQuery {
-		q.queryExpressions = append(q.queryExpressions, queryCond)
+		q.last = sqlSegment
 		return
 	}
 
 	// 防止用户重复设置and(),or()
-	q.handelRepeat(sqlSegment, ok, sk)
+	isRepeat := q.handelRepeat(sk, isKeyword)
+
+	// 如果不是重复设置，则添加
+	if !isRepeat {
+		q.queryExpressions = append(q.queryExpressions, sqlSegment)
+		q.last = sqlSegment
+	}
 }
 
-func (q *QueryCond[T]) handelRepeat(sqlSegment SqlSegment, ok bool, sk *sqlKeyword) {
-	lastKeyword, isKeyword := q.last.(*sqlKeyword)
-	if ok && isKeyword {
+func (q *QueryCond[T]) handelRepeat(sk *sqlKeyword, isKeyword bool) bool {
+	lastKeyword, isLastKeyword := q.last.(*sqlKeyword)
+	if isKeyword && isLastKeyword {
 		// 如果上一次是and，这一次也是and，那么就不需要重复设置了
 		isAnd := lastKeyword.keyword == constants.And
 		if isAnd && sk.keyword == constants.And {
-			return
+			return true
 		}
 		// 如果上一次是or，这一次也是or，那么就不需要重复设置了
 		isOr := lastKeyword.keyword == constants.Or
 		if isOr && sk.keyword == constants.Or {
-			return
+			return true
 		}
 		// 如果上一次是and，这次是or，那么删除上一次的值，使用最新的值
 		// 如果上一次是or，这次是and，那么删除上一次的值，使用最新的值
 		q.queryExpressions = append(q.queryExpressions, q.queryExpressions[:len(q.queryExpressions)-1]...)
-		q.queryExpressions = append(q.queryExpressions, sqlSegment)
-		q.last = sqlSegment
 	}
+	return false
 }
 
 func isNotKeyword(isKeyword bool, expressions []any) bool {
@@ -223,7 +290,8 @@ func (q *QueryCond[T]) buildSqlSegment(column any, condType string, values ...an
 	var sqlSegments []SqlSegment
 	sqlSegments = append(sqlSegments, &columnPointer{column: column}, &sqlKeyword{keyword: condType})
 	for _, val := range values {
-		sqlSegments = append(sqlSegments, &columnValue{value: val})
+		cv := columnValue{value: val}
+		sqlSegments = append(sqlSegments, &cv)
 	}
 	return sqlSegments
 }

@@ -1,4 +1,4 @@
-package gplux
+package gplus
 
 type SqlSegment interface {
 	getSqlSegment() string

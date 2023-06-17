@@ -18,7 +18,6 @@
 package tests
 
 import (
-	"github.com/acmestack/gorm-plus/gplux"
 	"gorm.io/gorm"
 	"strings"
 	"testing"
@@ -27,185 +26,185 @@ import (
 func TestDeleteByIdName(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE `id` = '1'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	gplux.DeleteById[User](1, gplux.Db(sessionDb))
+	gplus.DeleteById[User](1, gplus.Db(sessionDb))
 }
 
 func TestDeleteByIdsName(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE `id` IN ('1','2')"
 	sessionDb := checkDeleteSql(t, expectSql)
-	gplux.DeleteById[User]([]int{1, 2}, gplux.Db(sessionDb))
+	gplus.DeleteById[User]([]int{1, 2}, gplus.Db(sessionDb))
 }
 
 func TestDelete1Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username = 'afumu'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu")
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete2Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username = 'afumu' OR username = 'afumu2'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").Or().Eq(&u.Username, "afumu2")
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete3Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username = 'afumu' OR ( username = 'afumu2' AND score = '12' )"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
-	query.Eq(&u.Username, "afumu").Or(func(q *gplux.QueryCond[User]) {
+	query, u := gplus.NewQuery[User]()
+	query.Eq(&u.Username, "afumu").Or(func(q *gplus.QueryCond[User]) {
 		q.Eq(&u.Username, "afumu2").Eq(&u.Score, 12)
 	})
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete4Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username = 'afumu' AND ( username = 'afumu2' AND score = '12' )"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
-	query.Eq(&u.Username, "afumu").And(func(q *gplux.QueryCond[User]) {
+	query, u := gplus.NewQuery[User]()
+	query.Eq(&u.Username, "afumu").And(func(q *gplus.QueryCond[User]) {
 		q.Eq(&u.Username, "afumu2").Eq(&u.Score, 12)
 	})
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete5Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username = 'afumu' OR username = 'afumu2'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").Or().Eq(&u.Username, "afumu2")
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete6Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username = 'afumu' AND score = '60'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").And().Eq(&u.Score, 60)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete7Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE score > '60'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Gt(&u.Score, 60)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete8Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE score > '60'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Gt(&u.Score, 60)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete9Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE score >= '60'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Ge(&u.Score, 60)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete10Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE score < '60'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Lt(&u.Score, 60)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete11Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE score <= '60'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Le(&u.Score, 60)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete12Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username LIKE '%zhang%'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Like(&u.Username, "zhang")
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete13Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username LIKE '%zhang'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.LikeLeft(&u.Username, "zhang")
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete14Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username LIKE 'zhang%'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.LikeRight(&u.Username, "zhang")
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete15Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username IS NULL"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.IsNull(&u.Username)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete16Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username IS NOT NULL"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.IsNotNull(&u.Username)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete17Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username IN ('afumu','afumu2')"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.In(&u.Username, []string{"afumu", "afumu2"})
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete18Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE username NOT IN ('afumu','afumu2')"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.NotIn(&u.Username, []string{"afumu", "afumu2"})
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete20Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE score BETWEEN '60' AND '80'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.Between(&u.Score, 60, 80)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete21Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE score NOT BETWEEN '60' AND '80'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.NotBetween(&u.Score, 60, 80)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func TestDelete22Name(t *testing.T) {
 	var expectSql = "DELETE FROM `Users` WHERE score NOT BETWEEN '60' AND '80'"
 	sessionDb := checkDeleteSql(t, expectSql)
-	query, u := gplux.NewQuery[User]()
+	query, u := gplus.NewQuery[User]()
 	query.NotBetween(&u.Score, 60, 80)
-	gplux.Delete(query, gplux.Db(sessionDb))
+	gplus.Delete(query, gplus.Db(sessionDb))
 }
 
 func checkDeleteSql(t *testing.T, expect string) *gorm.DB {

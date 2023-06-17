@@ -1,30 +1,13 @@
-/*
- * Licensed to the AcmeStack under one or more contributor license
- * agreements. See the NOTICE file distributed with this work for
- * additional information regarding copyright ownership.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package gplus
 
 import (
 	"database/sql"
-	"reflect"
-
 	"github.com/acmestack/gorm-plus/constants"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"gorm.io/gorm/utils"
+	"reflect"
+	"strings"
 )
 
 var globalDb *gorm.DB
@@ -45,8 +28,7 @@ type Page[T any] struct {
 type Dao[T any] struct{}
 
 func (dao Dao[T]) NewQuery() (*QueryCond[T], *T) {
-	q := &QueryCond[T]{}
-	return q, nil
+	return NewQuery[T]()
 }
 
 func NewPage[T any](current, size int) *Page[T] {
@@ -268,8 +250,11 @@ func paginate[T any](p *Page[T]) func(db *gorm.DB) *gorm.DB {
 
 func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 	db := getDb(opts...)
+	// 这里清空参数，避免用户重复使用一个query条件
+	q.queryArgs = make([]any, 0)
 	resultDb := db.Model(new(T))
 	if q != nil {
+
 		if len(q.distinctColumns) > 0 {
 			resultDb.Distinct(q.distinctColumns)
 		}
@@ -278,19 +263,11 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 			resultDb.Select(q.selectColumns)
 		}
 
-		if q.queryBuilder.Len() > 0 {
-
-			if q.andNestBuilder.Len() > 0 {
-				q.queryArgs = append(q.queryArgs, q.andNestArgs...)
-				q.queryBuilder.WriteString(q.andNestBuilder.String())
-			}
-
-			if q.orNestBuilder.Len() > 0 {
-				q.queryArgs = append(q.queryArgs, q.orNestArgs...)
-				q.queryBuilder.WriteString(q.orNestBuilder.String())
-			}
-
-			resultDb.Where(q.queryBuilder.String(), q.queryArgs...)
+		expressions := q.queryExpressions
+		if len(expressions) > 0 {
+			var sqlBuilder strings.Builder
+			q.queryArgs = buildSqlAndArgs[T](expressions, &sqlBuilder, q.queryArgs)
+			resultDb.Where(sqlBuilder.String(), q.queryArgs...)
 		}
 
 		if q.orderBuilder.Len() > 0 {
@@ -316,29 +293,31 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 	return resultDb
 }
 
-func getPkColumnName[T any]() string {
-	var entity T
-	entityType := reflect.TypeOf(entity)
-	numField := entityType.NumField()
-	var columnName string
-	for i := 0; i < numField; i++ {
-		field := entityType.Field(i)
-		tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
-		isPrimaryKey := utils.CheckTruth(tagSetting["PRIMARYKEY"], tagSetting["PRIMARY_KEY"])
-		if isPrimaryKey {
-			name, ok := tagSetting["COLUMN"]
-			if !ok {
-				namingStrategy := schema.NamingStrategy{}
-				name = namingStrategy.ColumnName("", field.Name)
+func buildSqlAndArgs[T any](expressions []any, sqlBuilder *strings.Builder, queryArgs []any) []any {
+	for _, v := range expressions {
+		// 判断是否是columnValue类型
+		switch segment := v.(type) {
+		case *columnPointer:
+			sqlBuilder.WriteString(segment.getSqlSegment() + " ")
+		case *sqlKeyword:
+			sqlBuilder.WriteString(segment.getSqlSegment() + " ")
+		case *columnValue:
+			if segment.value == constants.And {
+				sqlBuilder.WriteString(segment.value.(string) + " ")
+				continue
 			}
-			columnName = name
-			break
+			if segment.value != "" {
+				sqlBuilder.WriteString("? ")
+				queryArgs = append(queryArgs, segment.value)
+			}
+		case *QueryCond[T]:
+			sqlBuilder.WriteString(constants.LeftBracket + " ")
+			// 递归处理条件
+			queryArgs = buildSqlAndArgs[T](segment.queryExpressions, sqlBuilder, queryArgs)
+			sqlBuilder.WriteString(constants.RightBracket + " ")
 		}
 	}
-	if columnName == "" {
-		return constants.DefaultPrimaryName
-	}
-	return columnName
+	return queryArgs
 }
 
 func getDb(opts ...OptionFunc) *gorm.DB {
@@ -357,6 +336,14 @@ func getDb(opts ...OptionFunc) *gorm.DB {
 	setSelectIfNeed(option, db)
 
 	return db
+}
+
+func getOption(opts []OptionFunc) Option {
+	var config Option
+	for _, op := range opts {
+		op(&config)
+	}
+	return config
 }
 
 func setSelectIfNeed(option Option, db *gorm.DB) {
@@ -381,10 +368,27 @@ func setOmitIfNeed(option Option, db *gorm.DB) {
 	}
 }
 
-func getOption(opts []OptionFunc) Option {
-	var config Option
-	for _, op := range opts {
-		op(&config)
+func getPkColumnName[T any]() string {
+	var entity T
+	entityType := reflect.TypeOf(entity)
+	numField := entityType.NumField()
+	var columnName string
+	for i := 0; i < numField; i++ {
+		field := entityType.Field(i)
+		tagSetting := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
+		isPrimaryKey := utils.CheckTruth(tagSetting["PRIMARYKEY"], tagSetting["PRIMARY_KEY"])
+		if isPrimaryKey {
+			name, ok := tagSetting["COLUMN"]
+			if !ok {
+				namingStrategy := schema.NamingStrategy{}
+				name = namingStrategy.ColumnName("", field.Name)
+			}
+			columnName = name
+			break
+		}
 	}
-	return config
+	if columnName == "" {
+		return constants.DefaultPrimaryName
+	}
+	return columnName
 }

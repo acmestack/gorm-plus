@@ -67,11 +67,11 @@ func (f *Function) NotIn(values ...any) (string, []any) {
 }
 
 func (f *Function) Between(start int64, end int64) (string, int64, int64) {
-	return f.funStr + " " + constants.Between + " ? and ?", start, end
+	return f.funStr + " " + constants.Between + " ? " + constants.And + " ?", start, end
 }
 
 func (f *Function) NotBetween(start int64, end int64) (string, int64, int64) {
-	return f.funStr + " " + constants.Not + " " + constants.Between + " ? and ?", start, end
+	return f.funStr + " " + constants.Not + " " + constants.Between + " ? " + constants.And + " ?", start, end
 }
 
 func Sum(columnName any) *Function {

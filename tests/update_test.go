@@ -18,6 +18,7 @@
 package tests
 
 import (
+	"github.com/acmestack/gorm-plus/gplus"
 	"gorm.io/gorm"
 	"strings"
 	"testing"

@@ -131,7 +131,7 @@ func TestSelectList9Name(t *testing.T) {
 }
 
 func TestSelectList10Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE username is null"
+	var expectSql = "SELECT * FROM `Users` WHERE username IS NULL"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.IsNull(&u.Username)
@@ -139,7 +139,7 @@ func TestSelectList10Name(t *testing.T) {
 }
 
 func TestSelectList11Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE username is not null"
+	var expectSql = "SELECT * FROM `Users` WHERE username IS NOT NULL"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.IsNotNull(&u.Username)
@@ -171,7 +171,7 @@ func TestSelectList14Name(t *testing.T) {
 }
 
 func TestSelectList17Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE age NOT BETWEEN '18' and '20'"
+	var expectSql = "SELECT * FROM `Users` WHERE age NOT BETWEEN '18' AND '20'"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.NotBetween(&u.Age, 18, 20)
@@ -195,7 +195,7 @@ func TestSelectList21Name(t *testing.T) {
 }
 
 func TestSelectList22Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' OR (username = 'zhangsan' AND age = '30' )"
+	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' OR ( username = 'zhangsan' AND age = '30' )"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").Or(func(q *gplus.QueryCond[User]) {
@@ -205,13 +205,74 @@ func TestSelectList22Name(t *testing.T) {
 }
 
 func TestSelectList23Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' AND (username = 'zhangsan' OR age = '30' )"
+	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' AND ( username = 'zhangsan' OR age = '30' )"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").And(func(q *gplus.QueryCond[User]) {
 		q.Eq(&u.Username, "zhangsan").Or().Eq(&u.Age, 30)
 	})
 	gplus.SelectList[User](query, gplus.Db(sessionDb))
+}
+
+func TestSelectList24Name(t *testing.T) {
+	var expectSql = "SELECT * FROM `Users` WHERE ( username = 'afumu' AND ( password = '123456' OR score = '60' ) OR dept = '开发' ) AND address = '北京' "
+	sessionDb := checkSelectSql(t, expectSql)
+	query, u := gplus.NewQuery[User]()
+	query.And(func(q *gplus.QueryCond[User]) {
+		q.Eq(&u.Username, "afumu").And(func(q *gplus.QueryCond[User]) {
+			q.Eq(&u.Password, "123456").Or().Eq(&u.Score, 60)
+		}).Or().Eq(&u.Dept, "开发")
+	}).Eq(&u.Address, "北京")
+	gplus.SelectList[User](query, gplus.Db(sessionDb))
+}
+
+func TestSelectListOrder(t *testing.T) {
+	var expectSql = "SELECT * FROM `Users` ORDER BY username DESC,age ASC"
+	sessionDb := checkSelectSql(t, expectSql)
+	query, user := gplus.NewQuery[User]()
+	query.OrderByDesc(&user.Username).OrderByAsc(&user.Age)
+	gplus.SelectList[User](query, gplus.Db(sessionDb))
+}
+
+func TestSelectListQueryModel(t *testing.T) {
+	var expectSql = "SELECT username AS name,`age` FROM `Users` WHERE username = 'afumu' AND ( address = '北京' OR age = '20' ) "
+	sessionDb := checkSelectSql(t, expectSql)
+	type UserVo struct {
+		Name string
+		Age  int64
+	}
+	query, user, userVo := gplus.NewQueryModel[User, UserVo]()
+	query.Eq(&user.Username, "afumu").And(func(q *gplus.QueryCond[User]) {
+		q.Eq(&user.Address, "北京").Or().Eq(&user.Age, 20)
+	}).Select(gplus.As(&user.Username, &userVo.Name), &user.Age)
+	gplus.SelectGeneric[User, []UserVo](query, gplus.Db(sessionDb))
+}
+
+func TestSelectListQueryModelSum(t *testing.T) {
+	var expectSql = "SELECT `username`,SUM(age) AS total FROM `Users` GROUP BY `username` HAVING SUM(age) NOT BETWEEN '333' AND '1000'"
+	sessionDb := checkSelectSql(t, expectSql)
+	type UserVo struct {
+		Username string
+		Total    int64
+	}
+	query, user, userVo := gplus.NewQueryModel[User, UserVo]()
+	query.Group(&user.Username).
+		Select(&user.Username, gplus.Sum(&user.Age).As(&userVo.Total)).
+		Having(gplus.Sum(&user.Age).NotBetween(333, 1000))
+	gplus.SelectGeneric[User, []UserVo](query, gplus.Db(sessionDb))
+}
+
+func TestSelectListQueryModelCount(t *testing.T) {
+	var expectSql = "SELECT `username`,COUNT(age) AS total FROM `Users` GROUP BY `username`"
+	sessionDb := checkSelectSql(t, expectSql)
+	type UserVo struct {
+		Username string
+		Total    int64
+	}
+	query, user, userVo := gplus.NewQueryModel[User, UserVo]()
+	query.Group(&user.Username).
+		Select(&user.Username, gplus.Count(&user.Age).As(&userVo.Total))
+	gplus.SelectGeneric[User, []UserVo](query, gplus.Db(sessionDb))
 }
 
 func checkSelectSql(t *testing.T, expect string) *gorm.DB {

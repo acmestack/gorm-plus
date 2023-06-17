@@ -15,25 +15,32 @@
  * limitations under the License.
  */
 
-package tests
+package gplus
 
-import (
-	"time"
-)
-
-type User struct {
-	ID        int64
-	Username  string
-	Password  string
-	Address   string
-	Age       int
-	Phone     string
-	Score     int
-	Dept      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+type SqlSegment interface {
+	getSqlSegment() string
 }
 
-func (User) TableName() string {
-	return "Users"
+type columnPointer struct {
+	column any
+}
+
+func (cp *columnPointer) getSqlSegment() string {
+	return getColumnName(cp.column)
+}
+
+type sqlKeyword struct {
+	keyword string
+}
+
+func (sk *sqlKeyword) getSqlSegment() string {
+	return sk.keyword
+}
+
+type columnValue struct {
+	value any
+}
+
+func (cv *columnValue) getSqlSegment() string {
+	return ""
 }

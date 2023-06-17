@@ -69,7 +69,7 @@ func TestUpdate3Name(t *testing.T) {
 }
 
 func TestUpdate4Name(t *testing.T) {
-	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username = 'afumu' OR (age = '18' AND score = '100' )"
+	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username = 'afumu' OR ( age = '18' AND score = '100' )"
 	sessionDb := checkUpdateSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").Or(func(q *gplus.QueryCond[User]) {
@@ -81,7 +81,7 @@ func TestUpdate4Name(t *testing.T) {
 }
 
 func TestUpdate5Name(t *testing.T) {
-	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username = 'afumu' AND (age = '18' OR score = '100' )"
+	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username = 'afumu' AND ( age = '18' OR score = '100' )"
 	sessionDb := checkUpdateSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").
@@ -104,7 +104,7 @@ func TestUpdate6Name(t *testing.T) {
 }
 
 func TestUpdate7Name(t *testing.T) {
-	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username is null"
+	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username IS NULL"
 	sessionDb := checkUpdateSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.IsNull(&u.Username).

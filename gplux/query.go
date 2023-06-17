@@ -39,6 +39,34 @@ func NewQuery[T any]() (*QueryCond[T], *T) {
 	return q, m
 }
 
+// NewQueryModel 构建查询条件
+func NewQueryModel[T any, R any]() (*QueryCond[T], *T, *R) {
+	q := &QueryCond[T]{}
+	var t *T
+	var r *R
+	entityTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
+	if model, ok := modelInstanceCache.Load(entityTypeStr); ok {
+		t = model.(*T)
+	}
+
+	modelTypeStr := reflect.TypeOf((*R)(nil)).Elem().String()
+	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
+		r = model.(*R)
+	}
+
+	if t == nil {
+		t = new(T)
+		Cache(t)
+	}
+
+	if r == nil {
+		r = new(R)
+		Cache(r)
+	}
+
+	return q, t, r
+}
+
 // Eq 等于 =
 func (q *QueryCond[T]) Eq(column any, val any) *QueryCond[T] {
 	q.addExpression(q.buildSqlSegment(column, constants.Eq, val)...)

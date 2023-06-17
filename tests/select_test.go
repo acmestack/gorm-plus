@@ -214,6 +214,67 @@ func TestSelectList23Name(t *testing.T) {
 	gplux.SelectList[User](query, gplux.Db(sessionDb))
 }
 
+func TestSelectList24Name(t *testing.T) {
+	var expectSql = "SELECT * FROM `Users` WHERE ( username = 'afumu' AND ( password = '123456' OR score = '60' ) OR dept = '开发' ) AND address = '北京' "
+	sessionDb := checkSelectSql(t, expectSql)
+	query, u := gplux.NewQuery[User]()
+	query.And(func(q *gplux.QueryCond[User]) {
+		q.Eq(&u.Username, "afumu").And(func(q *gplux.QueryCond[User]) {
+			q.Eq(&u.Password, "123456").Or().Eq(&u.Score, 60)
+		}).Or().Eq(&u.Dept, "开发")
+	}).Eq(&u.Address, "北京")
+	gplux.SelectList[User](query, gplux.Db(sessionDb))
+}
+
+func TestSelectListOrder(t *testing.T) {
+	var expectSql = "SELECT * FROM `Users` ORDER BY username DESC,age ASC"
+	sessionDb := checkSelectSql(t, expectSql)
+	query, user := gplux.NewQuery[User]()
+	query.OrderByDesc(&user.Username).OrderByAsc(&user.Age)
+	gplux.SelectList[User](query, gplux.Db(sessionDb))
+}
+
+func TestSelectListQueryModel(t *testing.T) {
+	var expectSql = "SELECT username AS name,`age` FROM `Users` WHERE username = 'afumu' AND ( address = '北京' OR age = '20' ) "
+	sessionDb := checkSelectSql(t, expectSql)
+	type UserVo struct {
+		Name string
+		Age  int64
+	}
+	query, user, userVo := gplux.NewQueryModel[User, UserVo]()
+	query.Eq(&user.Username, "afumu").And(func(q *gplux.QueryCond[User]) {
+		q.Eq(&user.Address, "北京").Or().Eq(&user.Age, 20)
+	}).Select(gplux.As(&user.Username, &userVo.Name), &user.Age)
+	gplux.SelectGeneric[User, []UserVo](query, gplux.Db(sessionDb))
+}
+
+func TestSelectListQueryModelSum(t *testing.T) {
+	var expectSql = "SELECT `username`,SUM(age) AS total FROM `Users` GROUP BY `username` HAVING SUM(age) NOT BETWEEN '333' AND '1000'"
+	sessionDb := checkSelectSql(t, expectSql)
+	type UserVo struct {
+		Username string
+		Total    int64
+	}
+	query, user, userVo := gplux.NewQueryModel[User, UserVo]()
+	query.Group(&user.Username).
+		Select(&user.Username, gplux.Sum(&user.Age).As(&userVo.Total)).
+		Having(gplux.Sum(&user.Age).NotBetween(333, 1000))
+	gplux.SelectGeneric[User, []UserVo](query, gplux.Db(sessionDb))
+}
+
+func TestSelectListQueryModelCount(t *testing.T) {
+	var expectSql = "SELECT `username`,COUNT(age) AS total FROM `Users` GROUP BY `username`"
+	sessionDb := checkSelectSql(t, expectSql)
+	type UserVo struct {
+		Username string
+		Total    int64
+	}
+	query, user, userVo := gplux.NewQueryModel[User, UserVo]()
+	query.Group(&user.Username).
+		Select(&user.Username, gplux.Count(&user.Age).As(&userVo.Total))
+	gplux.SelectGeneric[User, []UserVo](query, gplux.Db(sessionDb))
+}
+
 func checkSelectSql(t *testing.T, expect string) *gorm.DB {
 	expect = strings.TrimSpace(expect)
 	sessionDb := gormDb.Session(&gorm.Session{DryRun: true})

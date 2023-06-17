@@ -11,9 +11,14 @@ type QueryCond[T any] struct {
 	selectColumns    []string
 	distinctColumns  []string
 	queryExpressions []any
+	orderBuilder     strings.Builder
 	groupBuilder     strings.Builder
+	havingBuilder    strings.Builder
+	havingArgs       []any
 	queryArgs        []any
 	last             any
+	limit            *int
+	offset           int
 	updateMap        map[string]any
 }
 
@@ -154,13 +159,50 @@ func (q *QueryCond[T]) Group(columns ...any) *QueryCond[T] {
 	return q
 }
 
+// OrderByDesc 排序：ORDER BY 字段1,字段2 Desc
+func (q *QueryCond[T]) OrderByDesc(columns ...any) *QueryCond[T] {
+	var columnNames []string
+	for _, v := range columns {
+		columnName := getColumnName(v)
+		columnNames = append(columnNames, columnName)
+	}
+	q.buildOrder(constants.Desc, columnNames...)
+	return q
+}
+
+// OrderByAsc 排序：ORDER BY 字段1,字段2 ASC
+func (q *QueryCond[T]) OrderByAsc(columns ...any) *QueryCond[T] {
+	var columnNames []string
+	for _, v := range columns {
+		columnName := getColumnName(v)
+		columnNames = append(columnNames, columnName)
+	}
+	q.buildOrder(constants.Asc, columnNames...)
+	return q
+}
+
+// Having HAVING SQl语句
+func (q *QueryCond[T]) Having(having string, args ...any) *QueryCond[T] {
+	q.havingBuilder.WriteString(having)
+	if len(args) == 1 {
+		// 兼容function方法中in返回切片类型数据
+		if anies, ok := args[0].([]any); ok {
+			q.havingArgs = append(q.havingArgs, anies...)
+			return q
+		}
+	}
+	q.havingArgs = append(q.havingArgs, args...)
+	return q
+}
+
 // And 拼接 AND
 func (q *QueryCond[T]) And(fn ...func(q *QueryCond[T])) *QueryCond[T] {
 	q.addExpression(&sqlKeyword{keyword: constants.And})
 	if len(fn) > 0 {
 		nestQuery := &QueryCond[T]{}
 		fn[0](nestQuery)
-		q.addExpression(nestQuery)
+		q.queryExpressions = append(q.queryExpressions, nestQuery)
+		q.last = nestQuery
 		return q
 	}
 	return q
@@ -172,7 +214,8 @@ func (q *QueryCond[T]) Or(fn ...func(q *QueryCond[T])) *QueryCond[T] {
 	if len(fn) > 0 {
 		nestQuery := &QueryCond[T]{}
 		fn[0](nestQuery)
-		q.addExpression(nestQuery)
+		q.queryExpressions = append(q.queryExpressions, nestQuery)
+		q.last = nestQuery
 		return q
 	}
 	return q
@@ -227,29 +270,13 @@ func (q *QueryCond[T]) addAndCondIfNeed() {
 }
 
 func (q *QueryCond[T]) handleSingle(sqlSegment SqlSegment) {
-	// 如果是QueryCond,则直接添加
-	queryCond, isQuery := sqlSegment.(*QueryCond[T])
-	if isQuery {
-		q.queryExpressions = append(q.queryExpressions, queryCond)
-		q.last = queryCond
-		return
-	}
-
-	// 如何是第一次设置，则不需要添加and(),or(),not(),防止用户首次设置条件错误
+	// 如何是第一次设置，则不需要添加and(),or(),防止用户首次设置条件错误
 	if len(q.queryExpressions) == 0 {
 		return
 	}
 
-	// 如果是not(),则直接添加
-	sk, isKeyword := sqlSegment.(*sqlKeyword)
-	if isKeyword && sk.keyword == constants.Not {
-		q.queryExpressions = append(q.queryExpressions, sqlSegment)
-		q.last = sqlSegment
-		return
-	}
-
 	// 防止用户重复设置and(),or()
-	isRepeat := q.handelRepeat(sk, isKeyword)
+	isRepeat := q.handelRepeat(sqlSegment)
 
 	// 如果不是重复设置，则添加
 	if !isRepeat {
@@ -258,17 +285,18 @@ func (q *QueryCond[T]) handleSingle(sqlSegment SqlSegment) {
 	}
 }
 
-func (q *QueryCond[T]) handelRepeat(sk *sqlKeyword, isKeyword bool) bool {
+func (q *QueryCond[T]) handelRepeat(sqlSegment SqlSegment) bool {
+	currentKeyword, isCurrentKeyword := sqlSegment.(*sqlKeyword)
 	lastKeyword, isLastKeyword := q.last.(*sqlKeyword)
-	if isKeyword && isLastKeyword {
+	if isCurrentKeyword && isLastKeyword {
 		// 如果上一次是and，这一次也是and，那么就不需要重复设置了
 		isAnd := lastKeyword.keyword == constants.And
-		if isAnd && sk.keyword == constants.And {
+		if isAnd && currentKeyword.keyword == constants.And {
 			return true
 		}
 		// 如果上一次是or，这一次也是or，那么就不需要重复设置了
 		isOr := lastKeyword.keyword == constants.Or
-		if isOr && sk.keyword == constants.Or {
+		if isOr && currentKeyword.keyword == constants.Or {
 			return true
 		}
 		// 如果上一次是and，这次是or，那么删除上一次的值，使用最新的值
@@ -294,4 +322,15 @@ func (q *QueryCond[T]) buildSqlSegment(column any, condType string, values ...an
 		sqlSegments = append(sqlSegments, &cv)
 	}
 	return sqlSegments
+}
+
+func (q *QueryCond[T]) buildOrder(orderType string, columns ...string) {
+	for _, v := range columns {
+		if q.orderBuilder.Len() > 0 {
+			q.orderBuilder.WriteString(constants.Comma)
+		}
+		q.orderBuilder.WriteString(v)
+		q.orderBuilder.WriteString(" ")
+		q.orderBuilder.WriteString(orderType)
+	}
 }

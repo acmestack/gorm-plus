@@ -37,19 +37,18 @@ func Init(db *gorm.DB) {
 }
 
 type Page[T any] struct {
-	Current    int
-	Size       int
-	Total      int64
-	Records    []*T
-	CurTime    int64
-	RecordsMap []T
+	Current    int   `json:"page"`     // 页码
+	Size       int   `json:"pageSize"` // 每页大小
+	Total      int64 `json:"total"`
+	Records    []*T  `json:"list"`
+	CurTime    int64 `json:"curTime"` // 当前时间，毫秒
+	RecordsMap []T   `json:"listMap"`
 }
 
 type Dao[T any] struct{}
 
 func (dao Dao[T]) NewQuery() (*QueryCond[T], *T) {
-	q := &QueryCond[T]{}
-	return q, nil
+	return NewQuery[T]()
 }
 
 func NewPage[T any](current, size int) *Page[T] {

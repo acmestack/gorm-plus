@@ -49,7 +49,10 @@ func NewQuery[T any]() (*QueryCond[T], *T) {
 
 	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
 	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
-		return q, model.(*T)
+		m, isReal := model.(*T)
+		if isReal {
+			return q, m
+		}
 	}
 	m := new(T)
 	Cache(m)
@@ -63,12 +66,18 @@ func NewQueryModel[T any, R any]() (*QueryCond[T], *T, *R) {
 	var r *R
 	entityTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
 	if model, ok := modelInstanceCache.Load(entityTypeStr); ok {
-		t = model.(*T)
+		m, isReal := model.(*T)
+		if isReal {
+			t = m
+		}
 	}
 
 	modelTypeStr := reflect.TypeOf((*R)(nil)).Elem().String()
 	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
-		r = model.(*R)
+		m, isReal := model.(*R)
+		if isReal {
+			r = m
+		}
 	}
 
 	if t == nil {

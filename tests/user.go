@@ -21,17 +21,21 @@ import (
 	"time"
 )
 
-type User struct {
+type Base struct {
 	ID        int64
-	Username  string
-	Password  string
-	Address   string
-	Age       int
-	Phone     string
-	Score     int
-	Dept      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type User struct {
+	Base
+	Username string `gorm:"column:username"`
+	Password string
+	Address  string
+	Age      int
+	Phone    string
+	Score    int
+	Dept     string
 }
 
 func (User) TableName() string {

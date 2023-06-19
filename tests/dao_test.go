@@ -183,7 +183,7 @@ func TestUpdateZeroById(t *testing.T) {
 	users := getUsers()
 	gplus.InsertBatch[User](users)
 
-	updateUser := &User{ID: users[0].ID, Score: 100, Age: 25}
+	updateUser := &User{Base: Base{ID: users[0].ID}, Score: 100, Age: 25}
 
 	if res := gplus.UpdateZeroById[User](updateUser); res.Error != nil || res.RowsAffected != 1 {
 		t.Errorf("errors happened when deleteByIds: %v, affected: %v", res.Error, res.RowsAffected)
@@ -376,11 +376,11 @@ func TestExists(t *testing.T) {
 	query, model := gplus.NewQuery[User]()
 	query.Eq(&model.Username, users[0].Username)
 	exists, db := gplus.Exists[User](query)
-	if db.Error != nil {
-		t.Errorf("errors happened when SelectCount : %v", db.Error)
+	if db != nil {
+		t.Errorf("errors happened when SelectCount : %v", db.Error())
 	}
 	if !exists {
-		t.Errorf("errors happened when SelectCount : %v", db.Error)
+		t.Errorf("errors happened when SelectCount : %v", db.Error())
 	}
 }
 
@@ -554,6 +554,126 @@ func TestSelectGeneric7(t *testing.T) {
 		if userMap[dept] != score {
 			t.Errorf("errors happened when SelectGeneric")
 		}
+	}
+}
+
+func TestCase(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+
+	query, model := gplus.NewQuery[User]()
+	query.Case(true, func() {
+		query.Eq(&model.Username, "afumu1")
+	})
+	count, db := gplus.SelectCount(query)
+	if db.Error != nil {
+		t.Errorf("errors happened when SelectCount : %v", db.Error)
+	}
+	if count != 1 {
+		t.Errorf("count expects: %v, got %v", 1, count)
+	}
+}
+
+func TestPluck(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+
+	query, _ := gplus.NewQuery[User]()
+
+	usernames, db := gplus.Pluck[User, string]("username", query)
+	if db.Error != nil {
+		t.Errorf("errors happened when SelectCount : %v", db.Error.Error())
+	}
+	if len(usernames) == 0 {
+		t.Errorf("count expects: %v, got %v", len(usernames), 0)
+	} else {
+		for _, item := range usernames {
+			fmt.Printf("pluck list %s\n", item)
+		}
+
+	}
+}
+
+func TestPluckDistinct(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+
+	passwords, db := gplus.PluckDistinct[User, string]("password", nil)
+	if db.Error != nil {
+		t.Errorf("errors happened when SelectCount : %v", db.Error.Error())
+	}
+	if len(passwords) != 1 {
+		t.Errorf("count expects: %v, got %v", 1, len(passwords))
+	} else {
+		for _, item := range passwords {
+			fmt.Printf("pluck list %s\n", item)
+		}
+
+	}
+}
+
+func TestReset(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+
+	query, model := gplus.NewQuery[User]()
+	query.Eq(&model.Username, "afumu1").Or().Eq(&model.Username, "afumu2")
+	count, db := gplus.SelectCount(query)
+	if db.Error != nil {
+		t.Errorf("errors happened when SelectCount : %v", db.Error)
+	}
+	if count != 2 {
+		t.Errorf("count expects: %v, got %v", 2, count)
+	}
+
+	query.Reset().Eq(&model.Username, "afumu3")
+	count, db = gplus.SelectCount(query)
+	if db.Error != nil {
+		t.Errorf("errors happened when SelectCount : %v", db.Error)
+	}
+	if count != 1 {
+		t.Errorf("count expects: %v, got %v", 1, count)
+	}
+
+}
+
+func TestBySql(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+
+	gplus.InsertBatch[User](users)
+
+	type UserPlus struct {
+		User
+		Num int
+	}
+
+	records, db := gplus.SelectListBySql[UserPlus]("select * , 1 as num from Users")
+	if db.Error != nil {
+		t.Errorf("errors happened when SelectCount : %v", db.Error)
+	}
+
+	if len(records) > 0 {
+		for _, item := range records {
+			if item.Num != 1 {
+				t.Errorf("count expects: %v, got %v", 1, item.Num)
+			}
+		}
+	} else {
+		t.Errorf("count expects: %v, got %v", len(records), 0)
+	}
+
+	db = gplus.ExcSql("delete from Users")
+
+	if db.Error != nil {
+		t.Errorf("errors happened when SelectCount : %v", db.Error)
+	}
+	if db.RowsAffected == 0 {
+		t.Errorf("count expects: %v, got %v", db.RowsAffected, 0)
 	}
 }
 

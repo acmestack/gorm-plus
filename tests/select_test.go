@@ -38,7 +38,7 @@ func TestSelectById2Name(t *testing.T) {
 }
 
 func TestSelectById3Name(t *testing.T) {
-	var expectSql = "SELECT `Users`.`id`,`Users`.`password`,`Users`.`address`,`Users`.`phone`,`Users`.`score`,`Users`.`dept`,`Users`.`created_at`,`Users`.`updated_at` FROM `Users` WHERE id = '1'  ORDER BY `Users`.`id` LIMIT 1"
+	var expectSql = "SELECT `Users`.`id`,`Users`.`created_at`,`Users`.`updated_at`,`Users`.`password`,`Users`.`address`,`Users`.`phone`,`Users`.`score`,`Users`.`dept` FROM `Users` WHERE id = '1'  ORDER BY `Users`.`id` LIMIT 1"
 	sessionDb := checkSelectSql(t, expectSql)
 	u := gplus.GetModel[User]()
 	gplus.SelectById[User](1, gplus.Db(sessionDb), gplus.Omit(&u.Username, &u.Age))
@@ -163,7 +163,7 @@ func TestSelectList13Name(t *testing.T) {
 }
 
 func TestSelectList14Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE age BETWEEN '18' and '20'"
+	var expectSql = "SELECT * FROM `Users` WHERE age BETWEEN '18' AND '20'"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Between(&u.Age, 18, 20)

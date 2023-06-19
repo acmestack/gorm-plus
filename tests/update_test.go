@@ -27,7 +27,7 @@ import (
 func TestUpdateByIdName(t *testing.T) {
 	var expectSql = "UPDATE `Users` SET `score`='100' WHERE `id` = '1'"
 	sessionDb := checkUpdateSql(t, expectSql)
-	var user = &User{ID: 1, Score: 100}
+	var user = &User{Base: Base{ID: 1}, Score: 100}
 	u := gplus.GetModel[User]()
 	gplus.UpdateById(user, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
 }
@@ -35,7 +35,7 @@ func TestUpdateByIdName(t *testing.T) {
 func TestUpdateZeroByIdName(t *testing.T) {
 	var expectSql = "UPDATE `Users` SET `username`='',`password`='',`address`='',`age`='0',`phone`='',`score`='100',`dept`='' WHERE `id` = '1'"
 	sessionDb := checkUpdateSql(t, expectSql)
-	var user = &User{ID: 1, Score: 100}
+	var user = &User{Base: Base{ID: 1}, Score: 100}
 	u := gplus.GetModel[User]()
 	gplus.UpdateZeroById(user, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
 }

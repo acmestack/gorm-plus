@@ -235,7 +235,7 @@ func (q *QueryCond[T]) OrderByAsc(columns ...any) *QueryCond[T] {
 	return q
 }
 
-// Having HAVING SQl语句
+// Having  SQl语句
 func (q *QueryCond[T]) Having(having string, args ...any) *QueryCond[T] {
 	q.havingBuilder.WriteString(having)
 	if len(args) == 1 {
@@ -387,4 +387,27 @@ func (q *QueryCond[T]) buildOrder(orderType string, columns ...string) {
 		q.orderBuilder.WriteString(" ")
 		q.orderBuilder.WriteString(orderType)
 	}
+}
+
+// 根据条件，执行方法
+func (q *QueryCond[T]) Case(isTrue bool, handleFunc func()) *QueryCond[T] {
+	if isTrue {
+		handleFunc()
+	}
+	return q
+}
+
+// 重置查询条件
+func (q *QueryCond[T]) Reset() *QueryCond[T] {
+	q.selectColumns = q.selectColumns[:0]
+	q.distinctColumns = q.distinctColumns[:0]
+	q.queryExpressions = q.queryExpressions[:0]
+	q.orderBuilder.Reset()
+	q.groupBuilder.Reset()
+	q.havingBuilder.Reset()
+	q.havingArgs = q.havingArgs[:0]
+	q.queryArgs = q.queryArgs[:0]
+	q.updateMap = nil
+
+	return q
 }

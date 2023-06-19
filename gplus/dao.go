@@ -14,16 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package gplus
 
 import (
 	"database/sql"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/acmestack/gorm-plus/constants"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"gorm.io/gorm/utils"
-	"reflect"
-	"strings"
 )
 
 var globalDb *gorm.DB
@@ -38,13 +41,15 @@ type Page[T any] struct {
 	Size       int
 	Total      int64
 	Records    []*T
+	CurTime    int64
 	RecordsMap []T
 }
 
 type Dao[T any] struct{}
 
 func (dao Dao[T]) NewQuery() (*QueryCond[T], *T) {
-	return NewQuery[T]()
+	q := &QueryCond[T]{}
+	return q, nil
 }
 
 func NewPage[T any](current, size int) *Page[T] {
@@ -173,6 +178,70 @@ func SelectList[T any](q *QueryCond[T], opts ...OptionFunc) ([]*T, *gorm.DB) {
 	return results, resultDb
 }
 
+// add start
+
+// SelectByIdGeneric 查询时，转化为其他类型
+// 第一个泛型代表数据库表实体
+// 第二个泛型代表返回记录实体
+func SelectByIdGeneric[T any, R any](id any, opts ...OptionFunc) (*R, *gorm.DB) {
+	q, _ := NewQuery[T]()
+	q.Eq(getPkColumnName[T](), id)
+	var entity R
+	resultDb := buildCondition(q, opts...)
+	return &entity, resultDb.First(&entity)
+}
+
+// Pluck 取某列值，不去重
+func Pluck[T any, R any](column string, q *QueryCond[T], opts ...OptionFunc) ([]R, *gorm.DB) {
+	var results []R
+	resultDb := buildCondition(q, opts...)
+	resultDb.Pluck(column, &results)
+	return results, resultDb
+}
+
+// PluckDistinct 取某列值，去重
+func PluckDistinct[T any, R any](column string, q *QueryCond[T], opts ...OptionFunc) ([]R, *gorm.DB) {
+	var results []R
+	resultDb := buildCondition(q, opts...)
+	resultDb.Distinct(column).Pluck(column, &results)
+	return results, resultDb
+}
+
+// SelectListBySql 按任意SQL执行,指定返回类型数组
+func SelectListBySql[R any](querySql string, opts ...OptionFunc) ([]*R, *gorm.DB) {
+	resultDb := getDb(opts...)
+	var results []*R
+	resultDb = resultDb.Raw(querySql).Scan(&results)
+	return results, resultDb
+}
+
+// SelectOneBySql 根据原始的SQL语句，取一个
+func SelectOneBySql[R any](countSql string, opts ...OptionFunc) (R, *gorm.DB) {
+	resultDb := getDb(opts...)
+	var result R
+	resultDb = resultDb.Raw(countSql).Scan(&result)
+	return result, resultDb
+}
+
+// ExcSql 按任意SQL执行,返回影响的行
+func ExcSql(querySql string, opts ...OptionFunc) *gorm.DB {
+	resultDb := getDb(opts...)
+	resultDb = resultDb.Exec(querySql)
+	return resultDb
+}
+
+// add end
+
+// SelectListGeneric 根据条件查询多条记录
+// 第一个泛型代表数据库表实体
+// 第二个泛型代表返回记录实体
+func SelectListGeneric[T any, R any](q *QueryCond[T], opts ...OptionFunc) ([]*R, *gorm.DB) {
+	resultDb := buildCondition(q, opts...)
+	var results []*R
+	resultDb.Scan(&results)
+	return results, resultDb
+}
+
 // SelectPage 根据条件分页查询记录
 func SelectPage[T any](page *Page[T], q *QueryCond[T], opts ...OptionFunc) (*Page[T], *gorm.DB) {
 	option := getOption(opts)
@@ -190,6 +259,7 @@ func SelectPage[T any](page *Page[T], q *QueryCond[T], opts ...OptionFunc) (*Pag
 	var results []*T
 	resultDb.Scopes(paginate(page)).Find(&results)
 	page.Records = results
+	page.CurTime = time.Now().UnixMilli()
 	return page, resultDb
 }
 
@@ -202,9 +272,12 @@ func SelectCount[T any](q *QueryCond[T], opts ...OptionFunc) (int64, *gorm.DB) {
 }
 
 // Exists 根据条件判断记录是否存在
-func Exists[T any](q *QueryCond[T], opts ...OptionFunc) (bool, *gorm.DB) {
+func Exists[T any](q *QueryCond[T], opts ...OptionFunc) (bool, error) {
 	count, resultDb := SelectCount[T](q, opts...)
-	return count > 0, resultDb
+	if resultDb.Error == gorm.ErrRecordNotFound {
+		return false, nil
+	}
+	return count > 0, resultDb.Error
 }
 
 // SelectPageGeneric 根据传入的泛型封装分页记录
@@ -232,6 +305,7 @@ func SelectPageGeneric[T any, R any](page *Page[R], q *QueryCond[T], opts ...Opt
 		resultDb.Scopes(paginate(page)).Scan(&results)
 		page.Records = results
 	}
+	page.CurTime = time.Now().UnixMilli()
 	return page, resultDb
 }
 

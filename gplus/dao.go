@@ -266,10 +266,10 @@ func paginate[T any](p *Page[T]) func(db *gorm.DB) *gorm.DB {
 
 func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 	db := getDb(opts...)
-	// 这里清空参数，避免用户重复使用一个query条件
-	q.queryArgs = make([]any, 0)
 	resultDb := db.Model(new(T))
 	if q != nil {
+		// 这里清空参数，避免用户重复使用一个query条件
+		q.queryArgs = make([]any, 0)
 
 		if len(q.distinctColumns) > 0 {
 			resultDb.Distinct(q.distinctColumns)

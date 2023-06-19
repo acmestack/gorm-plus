@@ -389,6 +389,18 @@ func (q *QueryCond[T]) buildOrder(orderType string, columns ...string) {
 	}
 }
 
+// 执行执行增加条件
+func (q *QueryCond[T]) AddStrCond(cond string) *QueryCond[T] {
+	if len(q.queryExpressions) > 0 {
+		sk := sqlKeyword{keyword: constants.And}
+		q.queryExpressions = append(q.queryExpressions, &sk)
+	}
+	condSk := sqlKeyword{keyword: cond}
+	q.queryExpressions = append(q.queryExpressions, &condSk)
+	q.last = &condSk
+	return q
+}
+
 // 根据条件，执行方法
 func (q *QueryCond[T]) Case(isTrue bool, handleFunc func()) *QueryCond[T] {
 	if isTrue {

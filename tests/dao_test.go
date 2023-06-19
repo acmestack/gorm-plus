@@ -641,6 +641,42 @@ func TestReset(t *testing.T) {
 
 }
 
+func TestQueryBuilder(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+
+	query, _ := gplus.NewQuery[User]()
+
+	query.AddStrCond(fmt.Sprintf(" username = '%s' ", "afumu1"))
+
+	count, db := gplus.SelectCount(query)
+	if db.Error != nil {
+		t.Errorf("errors happened when SelectCount : %v", db.Error)
+	}
+	if count != 1 {
+		t.Errorf("count expects: %v, got %v", 1, count)
+	}
+}
+
+func TestExist(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+
+	query, _ := gplus.NewQuery[User]()
+
+	query.AddStrCond(fmt.Sprintf(" username = '%s' ", "afumu1"))
+
+	exist, dbErr := gplus.Exists(query)
+	if dbErr != nil {
+		t.Errorf("errors happened when SelectCount : %v", dbErr.Error())
+	}
+	if !exist {
+		t.Errorf("count expects: %v, got %v", true, exist)
+	}
+}
+
 func TestBySql(t *testing.T) {
 	deleteOldData()
 	users := getUsers()

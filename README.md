@@ -53,7 +53,7 @@ VALUES
 下载Gorm-Plus
 
 ```SQL
- go get github.com/acmestack/gorm-plus
+ go get github.com/aixj1984/gorm-plus
 ```
 
 
@@ -62,7 +62,7 @@ VALUES
 package main
 
 import (
-  "github.com/acmestack/gorm-plus/gplus"
+  "github.com/aixj1984/gorm-plus/gplus"
   "gorm.io/driver/mysql"
   "gorm.io/gorm"
   "gorm.io/gorm/logger"
@@ -135,5 +135,5 @@ func main() {
 
 然而，`Gorm-Plus`的强大功能远不止于此。
 
-更多文档请查看: [https://github.com/acmestack/gorm-plus/wiki](https://github.com/acmestack/gorm-plus/wiki)
+更多文档请查看: [https://github.com/aixj1984/gorm-plus/wiki](https://github.com/aixj1984/gorm-plus/wiki)
 

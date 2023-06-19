@@ -1,4 +1,4 @@
-module github.com/acmestack/gorm-plus
+module github.com/aixj1984/gorm-plus
 
 go 1.18
 

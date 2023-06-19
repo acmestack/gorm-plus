@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/acmestack/gorm-plus/constants"
+	"github.com/aixj1984/gorm-plus/constants"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"gorm.io/gorm/utils"

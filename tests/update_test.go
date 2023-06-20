@@ -113,6 +113,24 @@ func TestUpdate7Name(t *testing.T) {
 	gplus.Update(query, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
 }
 
+func TestUpdateRest(t *testing.T) {
+	var expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username = 'afumu' OR age = '18'"
+	sessionDb := checkUpdateSql(t, expectSql)
+	query, u := gplus.NewQuery[User]()
+	query.Eq(&u.Username, "afumu").Or().Eq(&u.Age, 18).
+		Set(&u.Score, 100).
+		Set(&u.Address, "shanghai")
+	gplus.Update(query, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+
+	expectSql = "UPDATE `Users` SET `address`='shanghai',`score`='100' WHERE username = 'afumu' AND age = '18'"
+	sessionDb = checkUpdateSql(t, expectSql)
+	query.Reset()
+	query.Eq(&u.Username, "afumu").Eq(&u.Age, 18).
+		Set(&u.Score, 100).
+		Set(&u.Address, "shanghai")
+	gplus.Update(query, gplus.Db(sessionDb), gplus.Omit(&u.CreatedAt, &u.UpdatedAt))
+}
+
 func checkUpdateSql(t *testing.T, expect string) *gorm.DB {
 	expect = strings.TrimSpace(expect)
 	sessionDb := gormDb.Session(&gorm.Session{DryRun: true})

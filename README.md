@@ -137,3 +137,10 @@ func main() {
 
 更多文档请查看: [https://github.com/acmestack/gorm-plus/wiki](https://github.com/acmestack/gorm-plus/wiki)
 
+## Star History
+<a href="https://star-history.com/#acmestack/gorm-plus&Date">
+  <picture>
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=acmestack/gorm-plus&type=Date" />
+  </picture>
+</a>
+

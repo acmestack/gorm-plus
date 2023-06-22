@@ -46,7 +46,6 @@ func (q *QueryCond[T]) getSqlSegment() string {
 // NewQuery 构建查询条件
 func NewQuery[T any]() (*QueryCond[T], *T) {
 	q := &QueryCond[T]{}
-
 	modelTypeStr := reflect.TypeOf((*T)(nil)).Elem().String()
 	if model, ok := modelInstanceCache.Load(modelTypeStr); ok {
 		m, isReal := model.(*T)
@@ -150,10 +149,24 @@ func (q *QueryCond[T]) LikeLeft(column any, val any) *QueryCond[T] {
 	return q
 }
 
+// NotLikeLeft 非左模糊 NOT LIKE '%值'
+func (q *QueryCond[T]) NotLikeLeft(column any, val any) *QueryCond[T] {
+	s := fmt.Sprintf("%v", val)
+	q.addExpression(q.buildSqlSegment(column, constants.Not+" "+constants.Like, "%"+s)...)
+	return q
+}
+
 // LikeRight 右模糊 LIKE '值%'
 func (q *QueryCond[T]) LikeRight(column any, val any) *QueryCond[T] {
 	s := fmt.Sprintf("%v", val)
 	q.addExpression(q.buildSqlSegment(column, constants.Like, s+"%")...)
+	return q
+}
+
+// NotLikeRight 非右模糊 NOT LIKE '值%'
+func (q *QueryCond[T]) NotLikeRight(column any, val any) *QueryCond[T] {
+	s := fmt.Sprintf("%v", val)
+	q.addExpression(q.buildSqlSegment(column, constants.Not+" "+constants.Like, s+"%")...)
 	return q
 }
 

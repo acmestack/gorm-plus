@@ -3,6 +3,8 @@ package gplus
 import (
 	"fmt"
 	"net/url"
+	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -48,7 +50,6 @@ func buildConditionMap(queryParams url.Values) (map[string][]*Condition, string)
 					groups := strings.Split(params[0], ".")
 					var groupName string
 					var columnName string
-
 					// 如果不包含组，默认分为同一个组
 					if len(groups) == 1 {
 						groupName = "default"
@@ -57,10 +58,10 @@ func buildConditionMap(queryParams url.Values) (map[string][]*Condition, string)
 						groupName = groups[0]
 						columnName = groups[1]
 					}
-
 					condition.Group = groupName
 					condition.ColumnName = columnName
 					condition.Op = currentOperator
+					condition.ColumnValue = params[1]
 					conditions, ok := maps[groupName]
 					if ok {
 						conditions = append(conditions, condition)
@@ -79,6 +80,7 @@ func buildConditionMap(queryParams url.Values) (map[string][]*Condition, string)
 
 func buildQueryCondMap[T any](maps map[string][]*Condition) map[string]*QueryCond[T] {
 	var queryMaps = make(map[string]*QueryCond[T])
+	columnTypeMap := getColumnTypeMap[T]()
 	for key, conditions := range maps {
 		query, _ := NewQuery[T]()
 		for _, condition := range conditions {
@@ -90,54 +92,72 @@ func buildQueryCondMap[T any](maps map[string][]*Condition) map[string]*QueryCon
 				if strings.ToLower(fmt.Sprintf("%s", value)) == "null" {
 					query.IsNull(name)
 				} else {
-					query.Eq(name, value)
+					query.Eq(name, convert(columnTypeMap, name, value))
 				}
 			case "!=":
 				if strings.ToLower(fmt.Sprintf("%s", value)) == "null" {
 					query.IsNotNull(name)
 				} else {
-					query.Ne(name, value)
+					query.Ne(name, convert(columnTypeMap, name, value))
 				}
 			case ">":
-				query.Gt(name, value)
+				query.Gt(name, convert(columnTypeMap, name, value))
 			case ">=":
-				query.Ge(name, value)
+				query.Ge(name, convert(columnTypeMap, name, value))
 			case "<":
-				query.Lt(name, value)
+				query.Lt(name, convert(columnTypeMap, name, value))
 			case "<=":
-				query.Le(name, value)
+				query.Le(name, convert(columnTypeMap, name, value))
 			case "?=":
-				//values := strings.Split(value, ",")
-				query.In(name, []int{20, 21})
+				values := strings.Split(fmt.Sprintf("%s", value), ",")
+				var queryValues []any
+				for _, v := range values {
+					queryValues = append(queryValues, convert(columnTypeMap, name, v))
+				}
+				query.In(name, queryValues)
 			case "!?=":
-				query.NotIn(name, value)
+				query.NotIn(name, convert(columnTypeMap, name, value))
 			case "^=":
 				values := strings.Split(fmt.Sprintf("%s", value), ",")
 				if len(values) == 2 {
-					query.Between(name, values[0], values[1])
+					query.Between(name, convert(columnTypeMap, name, values[0]), convert(columnTypeMap, name, values[1]))
 				}
 			case "!^=":
 				values := strings.Split(fmt.Sprintf("%s", value), ",")
 				if len(values) == 2 {
-					query.NotBetween(name, values[0], values[1])
+					query.NotBetween(name, convert(columnTypeMap, name, values[0]), convert(columnTypeMap, name, values[1]))
 				}
 			case "~=":
-				query.Like(name, value)
+				query.Like(name, convert(columnTypeMap, name, value))
 			case "!~=":
-				query.NotLike(name, value)
+				query.NotLike(name, convert(columnTypeMap, name, value))
 			case "~<=":
-				query.LikeLeft(name, value)
+				query.LikeLeft(name, convert(columnTypeMap, name, value))
 			case "~>=":
-				query.LikeRight(name, value)
+				query.LikeRight(name, convert(columnTypeMap, name, value))
 			case "!~<=":
-				query.NotLikeLeft(name, value)
+				query.NotLikeLeft(name, convert(columnTypeMap, name, value))
 			case "!~>=":
-				query.NotLikeRight(name, value)
+				query.NotLikeRight(name, convert(columnTypeMap, name, value))
 			}
 		}
 		queryMaps[key] = query
 	}
 	return queryMaps
+}
+
+func convert(columnTypeMap map[string]reflect.Type, name string, value any) any {
+	columnType, ok := columnTypeMap[name]
+	if ok {
+		switch columnType.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			atoi, err := strconv.Atoi(fmt.Sprintf("%s", value))
+			if err == nil {
+				value = atoi
+			}
+		}
+	}
+	return value
 }
 
 func buildGroupQuery[T any](gcond string, queryMaps map[string]*QueryCond[T]) *QueryCond[T] {
@@ -196,4 +216,15 @@ func buildGroupQuery[T any](gcond string, queryMaps map[string]*QueryCond[T]) *Q
 		}
 	}
 	return query
+}
+
+func getColumnTypeMap[T any]() map[string]reflect.Type {
+	var columnNameMap = make(map[string]reflect.Type)
+	typeOf := reflect.TypeOf((*T)(nil)).Elem()
+	for i := 0; i < typeOf.NumField(); i++ {
+		field := typeOf.Field(i)
+		columnName := parseColumnName(field)
+		columnNameMap[columnName] = field.Type
+	}
+	return columnNameMap
 }

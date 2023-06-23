@@ -37,6 +37,7 @@ type QueryCond[T any] struct {
 	limit            *int
 	offset           int
 	updateMap        map[string]any
+	columnTypeMap    map[string]reflect.Type
 }
 
 func (q *QueryCond[T]) getSqlSegment() string {

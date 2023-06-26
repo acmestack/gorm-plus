@@ -279,6 +279,10 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 			resultDb.Select(q.selectColumns)
 		}
 
+		if len(q.omitColumns) > 0 {
+			resultDb.Omit(q.omitColumns...)
+		}
+
 		expressions := q.queryExpressions
 		if len(expressions) > 0 {
 			var sqlBuilder strings.Builder

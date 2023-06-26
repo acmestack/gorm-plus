@@ -46,31 +46,23 @@ func BuildQuery[T any](queryParams url.Values) *QueryCond[T] {
 
 	// 如果没有分组条件，直接返回默认的查询条件
 	if len(gcond) == 0 {
-		return queryCondMap["default"]
+		q := queryCondMap["default"]
+		q.orderBuilder = queryCondMap["parent"].orderBuilder
+		q.selectColumns = queryCondMap["parent"].selectColumns
+		q.omitColumns = queryCondMap["parent"].omitColumns
+		return q
 	}
 
 	return buildGroupQuery[T](gcond, queryCondMap)
 }
 
-func parseParams(queryParams url.Values) (map[string][]*Condition, map[string]any, string) {
+func parseParams(queryParams url.Values) (map[string][]*Condition, map[string]string, string) {
 	var gcond string
 	var columnConditionMap = make(map[string][]*Condition)
-	var conditionMap = make(map[string]any)
+	var conditionMap = make(map[string]string)
 	for key, values := range queryParams {
 		if key == "q" {
 			columnConditionMap = buildConditionMap(values)
-		} else if key == "page" {
-			if len(values) > 0 {
-				conditionMap["page"] = values[len(values)-1]
-			}
-		} else if key == "size" {
-			if len(values) > 0 {
-				conditionMap["size"] = values[len(values)-1]
-			}
-		} else if key == "isTotal" {
-			if len(values) > 0 {
-				conditionMap["isTotal"] = values[len(values)-1]
-			}
 		} else if key == "sort" {
 			if len(values) > 0 {
 				conditionMap["sort"] = values[len(values)-1]
@@ -135,8 +127,35 @@ func getCurrentOp(value string) string {
 	return currentOperator
 }
 
-func buildQueryCondMap[T any](columnConditionMap map[string][]*Condition, conditionMap map[string]any) map[string]*QueryCond[T] {
+func buildQueryCondMap[T any](columnConditionMap map[string][]*Condition, conditionMap map[string]string) map[string]*QueryCond[T] {
 	var queryMaps = make(map[string]*QueryCond[T])
+	parentQuery, _ := NewQuery[T]()
+	queryMaps["parent"] = parentQuery
+	for key, value := range conditionMap {
+		if key == "sort" {
+			orderColumns := strings.Split(value, ",")
+			for _, column := range orderColumns {
+				if strings.HasPrefix(column, "+") {
+					newValue := strings.TrimLeft(column, "+")
+					parentQuery.OrderByAsc(newValue)
+				} else if strings.HasPrefix(column, "-") {
+					newValue := strings.TrimLeft(column, "-")
+					parentQuery.OrderByDesc(newValue)
+				}
+			}
+		} else if key == "select" {
+			selectColumns := strings.Split(value, ",")
+			for _, column := range selectColumns {
+				parentQuery.Select(column)
+			}
+		} else if key == "omit" {
+			omitColumns := strings.Split(value, ",")
+			for _, column := range omitColumns {
+				parentQuery.Omit(column)
+			}
+		}
+	}
+
 	columnTypeMap := getColumnTypeMap[T]()
 	for key, conditions := range columnConditionMap {
 		query := &QueryCond[any]{}

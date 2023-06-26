@@ -26,6 +26,7 @@ import (
 
 type QueryCond[T any] struct {
 	selectColumns    []string
+	omitColumns      []string
 	distinctColumns  []string
 	queryExpressions []any
 	orderBuilder     strings.Builder
@@ -294,6 +295,15 @@ func (q *QueryCond[T]) Select(columns ...any) *QueryCond[T] {
 	for _, v := range columns {
 		columnName := getColumnName(v)
 		q.selectColumns = append(q.selectColumns, columnName)
+	}
+	return q
+}
+
+// Omit 忽略字段
+func (q *QueryCond[T]) Omit(columns ...any) *QueryCond[T] {
+	for _, v := range columns {
+		columnName := getColumnName(v)
+		q.omitColumns = append(q.omitColumns, columnName)
 	}
 	return q
 }

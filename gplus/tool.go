@@ -42,18 +42,19 @@ func BuildQuery[T any](queryParams url.Values) *QueryCond[T] {
 
 	columnConditionMap, conditionMap, gcond := parseParams(queryParams)
 
-	queryCondMap := buildQueryCondMap[T](columnConditionMap, conditionMap)
+	queryCondMap, parentQuery := buildQueryCondMap[T](columnConditionMap, conditionMap)
 
 	// 如果没有分组条件，直接返回默认的查询条件
 	if len(gcond) == 0 {
-		q := queryCondMap["default"]
-		q.orderBuilder = queryCondMap["parent"].orderBuilder
-		q.selectColumns = queryCondMap["parent"].selectColumns
-		q.omitColumns = queryCondMap["parent"].omitColumns
-		return q
+		if q, ok := queryCondMap["default"]; ok {
+			q.orderBuilder = parentQuery.orderBuilder
+			q.selectColumns = parentQuery.selectColumns
+			q.omitColumns = parentQuery.omitColumns
+			return q
+		}
 	}
 
-	return buildGroupQuery[T](gcond, queryCondMap)
+	return buildGroupQuery[T](gcond, queryCondMap, parentQuery)
 }
 
 func parseParams(queryParams url.Values) (map[string][]*Condition, map[string]string, string) {
@@ -127,20 +128,18 @@ func getCurrentOp(value string) string {
 	return currentOperator
 }
 
-func buildQueryCondMap[T any](columnConditionMap map[string][]*Condition, conditionMap map[string]string) map[string]*QueryCond[T] {
+func buildQueryCondMap[T any](columnConditionMap map[string][]*Condition, conditionMap map[string]string) (map[string]*QueryCond[T], *QueryCond[T]) {
 	var queryMaps = make(map[string]*QueryCond[T])
 	parentQuery, _ := NewQuery[T]()
-	queryMaps["parent"] = parentQuery
 	for key, value := range conditionMap {
 		if key == "sort" {
 			orderColumns := strings.Split(value, ",")
 			for _, column := range orderColumns {
-				if strings.HasPrefix(column, "+") {
-					newValue := strings.TrimLeft(column, "+")
-					parentQuery.OrderByAsc(newValue)
-				} else if strings.HasPrefix(column, "-") {
+				if strings.HasPrefix(column, "-") {
 					newValue := strings.TrimLeft(column, "-")
 					parentQuery.OrderByDesc(newValue)
+				} else {
+					parentQuery.OrderByAsc(column)
 				}
 			}
 		} else if key == "select" {
@@ -170,11 +169,10 @@ func buildQueryCondMap[T any](columnConditionMap map[string][]*Condition, condit
 		newQuery.queryExpressions = append(newQuery.queryExpressions, query.queryExpressions...)
 		queryMaps[key] = newQuery
 	}
-	return queryMaps
+	return queryMaps, parentQuery
 }
 
-func buildGroupQuery[T any](gcond string, queryMaps map[string]*QueryCond[T]) *QueryCond[T] {
-	query, _ := NewQuery[T]()
+func buildGroupQuery[T any](gcond string, queryMaps map[string]*QueryCond[T], query *QueryCond[T]) *QueryCond[T] {
 	var tempQuerys []*QueryCond[T]
 	tempQuerys = append(tempQuerys, query)
 	for i, char := range gcond {
@@ -226,6 +224,16 @@ func buildGroupQuery[T any](gcond string, queryMaps map[string]*QueryCond[T]) *Q
 		if str == ")" {
 			// 删除最后一个query对象
 			tempQuerys = tempQuerys[:len(tempQuerys)-1]
+			continue
+		}
+
+		// 如果上面的条件不满足，而且是第一个的话，那么就直接添加条件
+		if i == 0 {
+			paramQuery, isOk := queryMaps[string(gcond[i])]
+			if isOk {
+				tempQuery.queryExpressions = append(tempQuery.queryExpressions, paramQuery.queryExpressions...)
+				tempQuery.last = paramQuery.queryExpressions[len(paramQuery.queryExpressions)-1]
+			}
 		}
 	}
 	return query

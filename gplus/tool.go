@@ -40,9 +40,11 @@ var builders = map[string]func(query *QueryCond[any], name string, value any){
 
 func BuildQuery[T any](queryParams url.Values) *QueryCond[T] {
 
-	columnConditionMap, conditionMap, gcond := parseParams(queryParams)
+	columnCondMap, conditionMap, gcond := parseParams(queryParams)
 
-	queryCondMap, parentQuery := buildQueryCondMap[T](columnConditionMap, conditionMap)
+	parentQuery := buildParentQuery[T](conditionMap)
+
+	queryCondMap := buildQueryCondMap[T](columnCondMap)
 
 	// 如果没有分组条件，直接返回默认的查询条件
 	if len(gcond) == 0 {
@@ -59,31 +61,33 @@ func BuildQuery[T any](queryParams url.Values) *QueryCond[T] {
 
 func parseParams(queryParams url.Values) (map[string][]*Condition, map[string]string, string) {
 	var gcond string
-	var columnConditionMap = make(map[string][]*Condition)
+	var columnCondMap = make(map[string][]*Condition)
 	var conditionMap = make(map[string]string)
 	for key, values := range queryParams {
-		if key == "q" {
-			columnConditionMap = buildConditionMap(values)
-		} else if key == "sort" {
+		switch key {
+		case "q":
+			columnCondMap = buildColumnCondMap(values)
+		case "sort":
 			if len(values) > 0 {
 				conditionMap["sort"] = values[len(values)-1]
 			}
-		} else if key == "select" {
+		case "select":
 			if len(values) > 0 {
 				conditionMap["select"] = values[len(values)-1]
 			}
-		} else if key == "omit" {
+		case "omit":
 			if len(values) > 0 {
 				conditionMap["omit"] = values[len(values)-1]
 			}
-		} else if key == "gcond" {
+		case "gcond":
 			gcond = values[0]
 		}
 	}
-	return columnConditionMap, conditionMap, gcond
+	return columnCondMap, conditionMap, gcond
 }
 
-func buildConditionMap(values []string) map[string][]*Condition {
+// buildColumnCondMap 根据url参数构建字段条件
+func buildColumnCondMap(values []string) map[string][]*Condition {
 	var maps = make(map[string][]*Condition)
 	for _, value := range values {
 		currentOperator := getCurrentOp(value)
@@ -128,8 +132,26 @@ func getCurrentOp(value string) string {
 	return currentOperator
 }
 
-func buildQueryCondMap[T any](columnConditionMap map[string][]*Condition, conditionMap map[string]string) (map[string]*QueryCond[T], *QueryCond[T]) {
-	var queryMaps = make(map[string]*QueryCond[T])
+func buildQueryCondMap[T any](columnCondMap map[string][]*Condition) map[string]*QueryCond[T] {
+	var queryCondMap = make(map[string]*QueryCond[T])
+	columnTypeMap := getColumnTypeMap[T]()
+	for key, conditions := range columnCondMap {
+		query := &QueryCond[any]{}
+		query.columnTypeMap = columnTypeMap
+		for _, condition := range conditions {
+			name := condition.ColumnName
+			op := condition.Op
+			value := condition.ColumnValue
+			builders[op](query, name, value)
+		}
+		newQuery, _ := NewQuery[T]()
+		newQuery.queryExpressions = append(newQuery.queryExpressions, query.queryExpressions...)
+		queryCondMap[key] = newQuery
+	}
+	return queryCondMap
+}
+
+func buildParentQuery[T any](conditionMap map[string]string) *QueryCond[T] {
 	parentQuery, _ := NewQuery[T]()
 	for key, value := range conditionMap {
 		if key == "sort" {
@@ -154,22 +176,7 @@ func buildQueryCondMap[T any](columnConditionMap map[string][]*Condition, condit
 			}
 		}
 	}
-
-	columnTypeMap := getColumnTypeMap[T]()
-	for key, conditions := range columnConditionMap {
-		query := &QueryCond[any]{}
-		query.columnTypeMap = columnTypeMap
-		for _, condition := range conditions {
-			name := condition.ColumnName
-			op := condition.Op
-			value := condition.ColumnValue
-			builders[op](query, name, value)
-		}
-		newQuery, _ := NewQuery[T]()
-		newQuery.queryExpressions = append(newQuery.queryExpressions, query.queryExpressions...)
-		queryMaps[key] = newQuery
-	}
-	return queryMaps, parentQuery
+	return parentQuery
 }
 
 func buildGroupQuery[T any](gcond string, queryMaps map[string]*QueryCond[T], query *QueryCond[T]) *QueryCond[T] {

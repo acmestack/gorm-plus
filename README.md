@@ -125,6 +125,84 @@ func main() {
 
 ```
 
+## 搜索工具
+
+只需要下面一行代码即可完成单表的所有查询功能
+
+```Bash
+gplus.SelectList(gplus.BuildQuery[User](queryParams))
+```
+
+
+
+例子：
+
+```Bash
+func main() {
+  http.HandleFunc("/", handleRequest)
+  http.ListenAndServe(":8080", nil)
+}
+
+func handleRequest(w http.ResponseWriter, r *http.Request) {
+  queryParams := r.URL.Query()
+  list, _ := gplus.SelectList(gplus.BuildQuery[User](queryParams))
+  marshal, _ := json.Marshal(list)
+  w.Write(marshal)
+}
+```
+
+假设我们要查询username为zhangsan的用户
+
+```Bash
+http://localhost:8080?q=username=zhangsan
+```
+
+
+
+假设我们要查询username姓zhang的用户
+
+```Bash
+http://localhost:8080?q=username~>=zhang
+```
+
+
+
+假设我们要查询age大于20的用户
+
+```Bash
+http://localhost:8080?q=age>20
+```
+
+
+
+假设我们要查询username等于zhagnsan，password等于123456的用户
+
+```Bash
+http://localhost:8080?q=username=zhangsan&q=password=123456
+```
+
+
+
+假设我们要查询username等于zhagnsan，password等于123456的用户
+
+```Bash
+http://localhost:8080?q=username=zhangsan&q=password=123456
+```
+
+
+
+假设我们要查询username等于zhagnsan，或者usename等于lisi的用户
+
+可以增加一个分组和gcond的条件查询来实现
+
+```Bash
+http://localhost:8080?q=A.username=zhangsan&q=B.username=lisi&gcond=A|B
+```
+
+
+
+所有的单表查询我们都只需要一行代码即可。
+
 
 
 ## 总结

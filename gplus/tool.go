@@ -1,3 +1,20 @@
+/*
+ * Licensed to the AcmeStack under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package gplus
 
 import (
@@ -53,6 +70,16 @@ func BuildQuery[T any](queryParams url.Values) *QueryCond[T] {
 			q.selectColumns = parentQuery.selectColumns
 			q.omitColumns = parentQuery.omitColumns
 			return q
+		}
+
+		// 如果没有分组条件，但是有分组设置，返回第一个查询条件。主要为了兼容只有一个分组但是没有设置条件的情况。
+		if len(queryCondMap) == 1 {
+			for _, q := range queryCondMap {
+				q.orderBuilder = parentQuery.orderBuilder
+				q.selectColumns = parentQuery.selectColumns
+				q.omitColumns = parentQuery.omitColumns
+				return q
+			}
 		}
 	}
 

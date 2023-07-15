@@ -24,34 +24,34 @@ import (
 	"testing"
 )
 
-func TestSelectById1Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE id = '1'  ORDER BY `Users`.`id` LIMIT 1"
+func TestSelectByIdName(t *testing.T) {
+	var expectSql = "SELECT * FROM `Users` WHERE id = 1  LIMIT 1"
 	sessionDb := checkSelectSql(t, expectSql)
 	gplus.SelectById[User](1, gplus.Db(sessionDb))
 }
 
-func TestSelectById2Name(t *testing.T) {
-	var expectSql = "SELECT `username`,`age` FROM `Users` WHERE id = '1'  ORDER BY `Users`.`id` LIMIT 1"
+func TestSelectByIdSelect(t *testing.T) {
+	var expectSql = "SELECT `username`,`age` FROM `Users` WHERE id = 1  LIMIT 1"
 	sessionDb := checkSelectSql(t, expectSql)
 	u := gplus.GetModel[User]()
 	gplus.SelectById[User](1, gplus.Db(sessionDb), gplus.Select(&u.Username, &u.Age))
 }
 
-func TestSelectById3Name(t *testing.T) {
-	var expectSql = "SELECT `Users`.`id`,`Users`.`password`,`Users`.`address`,`Users`.`phone`,`Users`.`score`,`Users`.`dept`,`Users`.`created_at`,`Users`.`updated_at` FROM `Users` WHERE id = '1'  ORDER BY `Users`.`id` LIMIT 1"
+func TestSelectByIdOmit(t *testing.T) {
+	var expectSql = "SELECT `Users`.`id`,`Users`.`password`,`Users`.`address`,`Users`.`phone`,`Users`.`score`,`Users`.`dept`,`Users`.`created_at`,`Users`.`updated_at` FROM `Users` WHERE id = 1  LIMIT 1"
 	sessionDb := checkSelectSql(t, expectSql)
 	u := gplus.GetModel[User]()
 	gplus.SelectById[User](1, gplus.Db(sessionDb), gplus.Omit(&u.Username, &u.Age))
 }
 
-func TestSelectByIdsName(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE id IN ('1','2')"
+func TestSelectByIdsIn(t *testing.T) {
+	var expectSql = "SELECT * FROM `Users` WHERE id IN (1,2)"
 	sessionDb := checkSelectSql(t, expectSql)
 	gplus.SelectByIds[User]([]int{1, 2}, gplus.Db(sessionDb))
 }
 
 func TestSelectOneName(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu'  ORDER BY `Users`.`id` LIMIT 1"
+	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu'  LIMIT 1"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu")
@@ -75,7 +75,7 @@ func TestSelectList2Name(t *testing.T) {
 }
 
 func TestSelectList3Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE age > '20'"
+	var expectSql = "SELECT * FROM `Users` WHERE age > 20"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Gt(&u.Age, 20)
@@ -83,7 +83,7 @@ func TestSelectList3Name(t *testing.T) {
 }
 
 func TestSelectList4Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE age >= '20'"
+	var expectSql = "SELECT * FROM `Users` WHERE age >= 20"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Ge(&u.Age, 20)
@@ -91,7 +91,7 @@ func TestSelectList4Name(t *testing.T) {
 }
 
 func TestSelectList5Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE age < '20'"
+	var expectSql = "SELECT * FROM `Users` WHERE age < 20"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Lt(&u.Age, 20)
@@ -99,7 +99,7 @@ func TestSelectList5Name(t *testing.T) {
 }
 
 func TestSelectList6Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE age <= '20'"
+	var expectSql = "SELECT * FROM `Users` WHERE age <= 20"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Le(&u.Age, 20)
@@ -163,7 +163,7 @@ func TestSelectList13Name(t *testing.T) {
 }
 
 func TestSelectList14Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE age BETWEEN '18' and '20'"
+	var expectSql = "SELECT * FROM `Users` WHERE age BETWEEN 18 AND 20"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Between(&u.Age, 18, 20)
@@ -171,7 +171,7 @@ func TestSelectList14Name(t *testing.T) {
 }
 
 func TestSelectList17Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE age NOT BETWEEN '18' AND '20'"
+	var expectSql = "SELECT * FROM `Users` WHERE age NOT BETWEEN 18 AND 20"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.NotBetween(&u.Age, 18, 20)
@@ -179,7 +179,7 @@ func TestSelectList17Name(t *testing.T) {
 }
 
 func TestSelectList20Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' AND age = '20'"
+	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' AND age = 20"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").And().Eq(&u.Age, 20)
@@ -187,7 +187,7 @@ func TestSelectList20Name(t *testing.T) {
 }
 
 func TestSelectList21Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' OR age = '20'"
+	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' OR age = 20"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").Or().Eq(&u.Age, 20)
@@ -195,7 +195,7 @@ func TestSelectList21Name(t *testing.T) {
 }
 
 func TestSelectList22Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' OR ( username = 'zhangsan' AND age = '30' )"
+	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' OR ( username = 'zhangsan' AND age = 30 )"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").Or(func(q *gplus.QueryCond[User]) {
@@ -205,7 +205,7 @@ func TestSelectList22Name(t *testing.T) {
 }
 
 func TestSelectList23Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' AND ( username = 'zhangsan' OR age = '30' )"
+	var expectSql = "SELECT * FROM `Users` WHERE username = 'afumu' AND ( username = 'zhangsan' OR age = 30 )"
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.Eq(&u.Username, "afumu").And(func(q *gplus.QueryCond[User]) {
@@ -215,7 +215,7 @@ func TestSelectList23Name(t *testing.T) {
 }
 
 func TestSelectList24Name(t *testing.T) {
-	var expectSql = "SELECT * FROM `Users` WHERE ( username = 'afumu' AND ( password = '123456' OR score = '60' ) OR dept = '开发' ) AND address = '北京' "
+	var expectSql = "SELECT * FROM `Users` WHERE ( username = 'afumu' AND ( password = '123456' OR score = 60 ) OR dept = '开发' ) AND address = '北京' "
 	sessionDb := checkSelectSql(t, expectSql)
 	query, u := gplus.NewQuery[User]()
 	query.And(func(q *gplus.QueryCond[User]) {
@@ -235,7 +235,7 @@ func TestSelectListOrder(t *testing.T) {
 }
 
 func TestSelectListQueryModel(t *testing.T) {
-	var expectSql = "SELECT username AS name,`age` FROM `Users` WHERE username = 'afumu' AND ( address = '北京' OR age = '20' ) "
+	var expectSql = "SELECT username AS name,`age` FROM `Users` WHERE username = 'afumu' AND ( address = '北京' OR age = 20 ) "
 	sessionDb := checkSelectSql(t, expectSql)
 	type UserVo struct {
 		Name string
@@ -249,7 +249,7 @@ func TestSelectListQueryModel(t *testing.T) {
 }
 
 func TestSelectListQueryModelSum(t *testing.T) {
-	var expectSql = "SELECT `username`,SUM(age) AS total FROM `Users` GROUP BY `username` HAVING SUM(age) NOT BETWEEN '333' AND '1000'"
+	var expectSql = "SELECT `username`,SUM(age) AS total FROM `Users` GROUP BY `username` HAVING SUM(age) NOT BETWEEN 333 AND 1000"
 	sessionDb := checkSelectSql(t, expectSql)
 	type UserVo struct {
 		Username string

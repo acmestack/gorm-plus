@@ -143,7 +143,16 @@ func Now() *time.Time {
 func buildSql(db *gorm.DB) string {
 	sql := db.Statement.SQL.String()
 	for _, value := range db.Statement.Vars {
-		sql = strings.Replace(sql, "?", fmt.Sprintf("'%v'", value), 1)
+		sql = strings.Replace(sql, "?", convert(value), 1)
 	}
 	return sql
+}
+
+func convert(value any) string {
+	columnType := reflect.TypeOf(value)
+	switch columnType.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return fmt.Sprintf("%v", value)
+	}
+	return fmt.Sprintf("'%v'", value)
 }

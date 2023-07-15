@@ -148,7 +148,7 @@ func SelectById[T any](id any, opts ...OptionFunc) (*T, *gorm.DB) {
 	q.Eq(getPkColumnName[T](), id)
 	var entity T
 	resultDb := buildCondition(q, opts...)
-	return &entity, resultDb.First(&entity)
+	return &entity, resultDb.Take(&entity)
 }
 
 // SelectByIds 根据 ID 查询多条记录
@@ -162,7 +162,7 @@ func SelectByIds[T any](ids any, opts ...OptionFunc) ([]*T, *gorm.DB) {
 func SelectOne[T any](q *QueryCond[T], opts ...OptionFunc) (*T, *gorm.DB) {
 	var entity T
 	resultDb := buildCondition(q, opts...)
-	return &entity, resultDb.First(&entity)
+	return &entity, resultDb.Take(&entity)
 }
 
 // SelectList 根据条件查询多条记录
@@ -277,6 +277,10 @@ func buildCondition[T any](q *QueryCond[T], opts ...OptionFunc) *gorm.DB {
 
 		if len(q.selectColumns) > 0 {
 			resultDb.Select(q.selectColumns)
+		}
+
+		if len(q.omitColumns) > 0 {
+			resultDb.Omit(q.omitColumns...)
 		}
 
 		expressions := q.queryExpressions

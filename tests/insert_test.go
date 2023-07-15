@@ -25,7 +25,7 @@ import (
 )
 
 func TestInsert1Name(t *testing.T) {
-	var expectSql = "INSERT INTO `Users` (`username`,`password`,`address`,`age`,`phone`,`score`,`dept`) VALUES ('afumu','123456','','18','','12','研发部门')"
+	var expectSql = "INSERT INTO `Users` (`username`,`password`,`address`,`age`,`phone`,`score`,`dept`) VALUES ('afumu','123456','',18,'',12,'研发部门')"
 	user := &User{Username: "afumu", Password: "123456", Age: 18, Score: 12, Dept: "研发部门"}
 	u := gplus.GetModel[User]()
 	sessionDb := checkInsertSql(t, expectSql)
@@ -33,7 +33,7 @@ func TestInsert1Name(t *testing.T) {
 }
 
 func TestInsert2Name(t *testing.T) {
-	var expectSql = "INSERT INTO `Users` (`username`,`password`,`address`,`age`,`phone`,`score`) VALUES ('afumu','123456','','18','','12')"
+	var expectSql = "INSERT INTO `Users` (`username`,`password`,`address`,`age`,`phone`,`score`) VALUES ('afumu','123456','',18,'',12)"
 	user := &User{Username: "afumu", Password: "123456", Age: 18, Score: 12, Dept: "研发部门"}
 	u := gplus.GetModel[User]()
 	sessionDb := checkInsertSql(t, expectSql)

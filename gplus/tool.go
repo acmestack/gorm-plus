@@ -280,16 +280,42 @@ func getColumnTypeMap[T any]() map[string]reflect.Type {
 			return columnNameMap
 		}
 	}
-
-	var columnNameMap = make(map[string]reflect.Type)
+	var columnTypeMap = make(map[string]reflect.Type)
 	typeOf := reflect.TypeOf((*T)(nil)).Elem()
 	for i := 0; i < typeOf.NumField(); i++ {
 		field := typeOf.Field(i)
+		if field.Anonymous {
+			nestedFields := getSubFieldColumnTypeMap(field)
+			for key, value := range nestedFields {
+				columnTypeMap[key] = value
+			}
+		}
 		columnName := parseColumnName(field)
-		columnNameMap[columnName] = field.Type
+		columnTypeMap[columnName] = field.Type
 	}
-	columnTypeCache.Store(modelTypeStr, columnNameMap)
-	return columnNameMap
+	columnTypeCache.Store(modelTypeStr, columnTypeMap)
+	return columnTypeMap
+}
+
+func getSubFieldColumnTypeMap(field reflect.StructField) map[string]reflect.Type {
+	columnTypeMap := make(map[string]reflect.Type)
+	modelType := field.Type
+	if modelType.Kind() == reflect.Ptr {
+		modelType = modelType.Elem()
+	}
+	for j := 0; j < modelType.NumField(); j++ {
+		subField := modelType.Field(j)
+		if subField.Anonymous {
+			nestedFields := getSubFieldColumnTypeMap(subField)
+			for key, value := range nestedFields {
+				columnTypeMap[key] = value
+			}
+		} else {
+			columnName := parseColumnName(subField)
+			columnTypeMap[columnName] = subField.Type
+		}
+	}
+	return columnTypeMap
 }
 
 func notLikeLeft(query *QueryCond[any], name string, value any) {

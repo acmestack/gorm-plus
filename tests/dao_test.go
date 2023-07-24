@@ -183,7 +183,7 @@ func TestUpdateZeroById(t *testing.T) {
 	users := getUsers()
 	gplus.InsertBatch[User](users)
 
-	updateUser := &User{Base: Base{ID: users[0].ID}, Score: 100, Age: 25}
+	updateUser := &User{Base: Base{ID: users[0].ID, CreatedAt: users[0].CreatedAt}, Score: 100, Age: 25}
 
 	if res := gplus.UpdateZeroById[User](updateUser); res.Error != nil || res.RowsAffected != 1 {
 		t.Errorf("errors happened when deleteByIds: %v, affected: %v", res.Error, res.RowsAffected)

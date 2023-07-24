@@ -23,13 +23,13 @@ import (
 
 type Base struct {
 	ID        int64
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type User struct {
 	Base
-	Username string `gorm:"column:username"`
+	Username string
 	Password string
 	Address  string
 	Age      int

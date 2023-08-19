@@ -34,11 +34,11 @@ func Init(db *gorm.DB) {
 }
 
 type Page[T any] struct {
-	Current    int
-	Size       int
-	Total      int64
-	Records    []*T
-	RecordsMap []T
+	Current    int   `json:"current"`
+	Size       int   `json:"size"`
+	Total      int64 `json:"total"`
+	Records    []*T  `json:"records"`
+	RecordsMap []T   `json:"recordsMap"`
 }
 
 type Dao[T any] struct{}

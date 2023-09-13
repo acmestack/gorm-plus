@@ -564,7 +564,9 @@ func TestTx(t *testing.T) {
 		err := gplus.InsertBatch[User](users, gplus.Db(tx)).Error
 		return err
 	})
-	fmt.Println(err.Error())
+	if err != nil {
+		t.Errorf(err.Error())
+	}
 }
 
 func deleteOldData() {

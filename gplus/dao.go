@@ -197,6 +197,8 @@ func SelectPage[T any](page *Page[T], q *QueryCond[T], opts ...OptionFunc) (*Pag
 func SelectCount[T any](q *QueryCond[T], opts ...OptionFunc) (int64, *gorm.DB) {
 	var count int64
 	resultDb := buildCondition(q, opts...)
+	//fix 查询有设置Select并且数量只有一个且有设置别名,生成sql不对问题
+	resultDb.Statement.Selects = nil
 	resultDb.Count(&count)
 	return count, resultDb
 }
@@ -247,6 +249,12 @@ func SelectGeneric[T any, R any](q *QueryCond[T], opts ...OptionFunc) (R, *gorm.
 func Begin(opts ...*sql.TxOptions) *gorm.DB {
 	db := getDb()
 	return db.Begin(opts...)
+}
+
+// 事务
+func Tx(txFunc func(tx *gorm.DB) error, opts ...OptionFunc) error {
+	db := getDb(opts...)
+	return db.Transaction(txFunc)
 }
 
 func paginate[T any](p *Page[T]) func(db *gorm.DB) *gorm.DB {

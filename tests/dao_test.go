@@ -557,6 +557,18 @@ func TestSelectGeneric7(t *testing.T) {
 	}
 }
 
+func TestTx(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	err := gplus.Tx(func(tx *gorm.DB) error {
+		err := gplus.InsertBatch[User](users, gplus.Db(tx)).Error
+		return err
+	})
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+}
+
 func deleteOldData() {
 	q, u := gplus.NewQuery[User]()
 	q.IsNotNull(&u.ID)

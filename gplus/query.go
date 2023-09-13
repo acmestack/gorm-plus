@@ -318,6 +318,130 @@ func (q *QueryCond[T]) Set(column any, val any) *QueryCond[T] {
 	return q
 }
 
+/*
+* 自定义条件
+ */
+
+// AndCond 拼接 AND
+func (q *QueryCond[T]) AndCond(cond bool, fn ...func(q *QueryCond[T])) *QueryCond[T] {
+	if cond {
+		return q.And(fn...)
+	}
+	return q
+}
+
+// OrCond 拼接 OR
+func (q *QueryCond[T]) OrCond(cond bool, fn ...func(q *QueryCond[T])) *QueryCond[T] {
+	if cond {
+		return q.Or(fn...)
+	}
+	return q
+}
+
+// EqCond 等于 =
+func (q *QueryCond[T]) EqCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.Eq(column, val)
+	}
+	return q
+}
+
+// NeCond 不等于 !=
+func (q *QueryCond[T]) NeCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.Ne(column, val)
+	}
+	return q
+}
+
+// GtCond 大于 >
+func (q *QueryCond[T]) GtCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.Gt(column, val)
+	}
+	return q
+}
+
+// GeCond 大于等于 >=
+func (q *QueryCond[T]) GeCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.Ge(column, val)
+	}
+	return q
+}
+
+// LtCond 小于 <
+func (q *QueryCond[T]) LtCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.Lt(column, val)
+	}
+	return q
+}
+
+// LeCond 小于等于 <=
+func (q *QueryCond[T]) LeCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.Le(column, val)
+	}
+	return q
+}
+
+// LikeCond 模糊 LIKE '%值%'
+func (q *QueryCond[T]) LikeCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.Like(column, val)
+	}
+	return q
+}
+
+// NotLikeCond 非模糊 NOT LIKE '%值%'
+func (q *QueryCond[T]) NotLikeCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.NotLike(column, val)
+	}
+	return q
+}
+
+// LikeLeftCond 左模糊 LIKE '%值'
+func (q *QueryCond[T]) LikeLeftCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.LikeLeft(column, val)
+	}
+	return q
+}
+
+// NotLikeLeftCond 非左模糊 NOT LIKE '%值'
+func (q *QueryCond[T]) NotLikeLeftCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.NotLike(column, val)
+	}
+	return q
+}
+
+// LikeRightCond 右模糊 LIKE '值%'
+func (q *QueryCond[T]) LikeRightCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.LikeRight(column, val)
+	}
+	return q
+}
+
+// NotLikeRightCond 非右模糊 NOT LIKE '值%'
+func (q *QueryCond[T]) NotLikeRightCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.NotLikeRight(column, val)
+	}
+	return q
+}
+
+// InCond 字段 IN (值1, 值2, ...)
+func (q *QueryCond[T]) InCond(cond bool, column any, val any) *QueryCond[T] {
+	if cond {
+		return q.In(column, val)
+	}
+	return q
+}
+
 func (q *QueryCond[T]) addExpression(sqlSegments ...SqlSegment) {
 	if len(sqlSegments) == 1 {
 		q.handleSingle(sqlSegments[0])

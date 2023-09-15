@@ -660,6 +660,22 @@ func (q *QueryCond[T]) OrInCond(cond bool, column any, val any) *QueryCond[T] {
 	return q
 }
 
+// ApplySQL 拼接 sql
+// Case: query.ApplySQL("AND id IN (SELECT user_id FROM app_user WHERE app_id = ? AND app_name = ?)", 1, "TestApp")
+func (q *QueryCond[T]) ApplySQL(applySql string, params ...any) *QueryCond[T] {
+	q.addExpression(&applySqlSegment{applySql: applySql, params: params})
+	return q
+}
+
+// ApplySQLCond 拼接 sql
+// Case: query.ApplySQLCond(true,"AND id IN (SELECT user_id FROM app_user WHERE app_id = ? AND app_name = ?)", 1, "TestApp")
+func (q *QueryCond[T]) ApplySQLCond(cond bool, applySql string, params ...any) *QueryCond[T] {
+	if cond {
+		return q.ApplySQL(applySql, params...)
+	}
+	return q
+}
+
 func (q *QueryCond[T]) addExpression(sqlSegments ...SqlSegment) {
 	if len(sqlSegments) == 1 {
 		q.handleSingle(sqlSegments[0])

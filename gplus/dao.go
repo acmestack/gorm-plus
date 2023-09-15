@@ -428,6 +428,13 @@ func buildSqlAndArgs[T any](expressions []any, sqlBuilder *strings.Builder, quer
 				sqlBuilder.WriteString("? ")
 				queryArgs = append(queryArgs, segment.value)
 			}
+		case *applySqlSegment:
+			if len(strings.Trim(segment.applySql, " ")) > 0 {
+				sqlBuilder.WriteString(segment.applySql)
+				if len(segment.params) > 0 {
+					queryArgs = append(queryArgs, segment.params...)
+				}
+			}
 		case *QueryCond[T]:
 			// 当子条件不存在查询表达式时，无需进行递归处理
 			if len(segment.queryExpressions) == 0 {

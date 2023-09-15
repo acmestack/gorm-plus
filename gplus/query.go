@@ -267,10 +267,13 @@ func (q *QueryCond[T]) Having(having string, args ...any) *QueryCond[T] {
 // And 拼接 AND
 func (q *QueryCond[T]) And(fn ...func(q *QueryCond[T])) *QueryCond[T] {
 	if len(fn) > 0 {
-		// fix bug: https://github.com/acmestack/gorm-plus/issues/74
-		q.addExpression(&sqlKeyword{keyword: constants.And})
 		nestQuery := &QueryCond[T]{}
 		fn[0](nestQuery)
+		// fix bug: https://github.com/acmestack/gorm-plus/issues/74
+		if len(nestQuery.queryExpressions) > 0 {
+			return q
+		}
+		q.addExpression(&sqlKeyword{keyword: constants.And})
 		q.queryExpressions = append(q.queryExpressions, nestQuery)
 		q.last = nestQuery
 		return q
@@ -282,10 +285,13 @@ func (q *QueryCond[T]) And(fn ...func(q *QueryCond[T])) *QueryCond[T] {
 // Or 拼接 OR
 func (q *QueryCond[T]) Or(fn ...func(q *QueryCond[T])) *QueryCond[T] {
 	if len(fn) > 0 {
-		// fix bug: https://github.com/acmestack/gorm-plus/issues/74
-		q.addExpression(&sqlKeyword{keyword: constants.Or})
 		nestQuery := &QueryCond[T]{}
 		fn[0](nestQuery)
+		// fix bug: https://github.com/acmestack/gorm-plus/issues/74
+		if len(nestQuery.queryExpressions) == 0 {
+			return q
+		}
+		q.addExpression(&sqlKeyword{keyword: constants.Or})
 		q.queryExpressions = append(q.queryExpressions, nestQuery)
 		q.last = nestQuery
 		return q

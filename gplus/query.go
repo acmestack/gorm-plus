@@ -266,27 +266,31 @@ func (q *QueryCond[T]) Having(having string, args ...any) *QueryCond[T] {
 
 // And 拼接 AND
 func (q *QueryCond[T]) And(fn ...func(q *QueryCond[T])) *QueryCond[T] {
-	q.addExpression(&sqlKeyword{keyword: constants.And})
 	if len(fn) > 0 {
+		// fix bug: https://github.com/acmestack/gorm-plus/issues/74
+		q.addExpression(&sqlKeyword{keyword: constants.And})
 		nestQuery := &QueryCond[T]{}
 		fn[0](nestQuery)
 		q.queryExpressions = append(q.queryExpressions, nestQuery)
 		q.last = nestQuery
 		return q
 	}
+	q.addExpression(&sqlKeyword{keyword: constants.And})
 	return q
 }
 
 // Or 拼接 OR
 func (q *QueryCond[T]) Or(fn ...func(q *QueryCond[T])) *QueryCond[T] {
-	q.addExpression(&sqlKeyword{keyword: constants.Or})
 	if len(fn) > 0 {
+		// fix bug: https://github.com/acmestack/gorm-plus/issues/74
+		q.addExpression(&sqlKeyword{keyword: constants.Or})
 		nestQuery := &QueryCond[T]{}
 		fn[0](nestQuery)
 		q.queryExpressions = append(q.queryExpressions, nestQuery)
 		q.last = nestQuery
 		return q
 	}
+	q.addExpression(&sqlKeyword{keyword: constants.Or})
 	return q
 }
 

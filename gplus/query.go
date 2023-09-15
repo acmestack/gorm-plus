@@ -745,10 +745,22 @@ func (q *QueryCond[T]) buildOrder(orderType string, columns ...string) {
 	}
 }
 
-// 执行执行增加条件
-func (q *QueryCond[T]) AddStrCond(cond string) *QueryCond[T] {
+// 执行增加AND条件
+func (q *QueryCond[T]) AddAndStrCond(cond string) *QueryCond[T] {
 	if len(q.queryExpressions) > 0 {
 		sk := sqlKeyword{keyword: constants.And}
+		q.queryExpressions = append(q.queryExpressions, &sk)
+	}
+	condSk := sqlKeyword{keyword: cond}
+	q.queryExpressions = append(q.queryExpressions, &condSk)
+	q.last = &condSk
+	return q
+}
+
+// 执行增加OR条件
+func (q *QueryCond[T]) AddOrStrCond(cond string) *QueryCond[T] {
+	if len(q.queryExpressions) > 0 {
+		sk := sqlKeyword{keyword: constants.Or}
 		q.queryExpressions = append(q.queryExpressions, &sk)
 	}
 	condSk := sqlKeyword{keyword: cond}

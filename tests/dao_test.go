@@ -34,6 +34,7 @@ var gormDb *gorm.DB
 
 func init() {
 	dsn := "root:123456@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
+
 	var err error
 	gormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
@@ -660,7 +661,7 @@ func TestQueryBuilder(t *testing.T) {
 
 	query, _ := gplus.NewQuery[User]()
 
-	query.AddStrCond(fmt.Sprintf(" username = '%s' ", "afumu1"))
+	query.AddAndStrCond(fmt.Sprintf(" username = '%s' ", "afumu1"))
 
 	count, db := gplus.SelectCount(query)
 	if db.Error != nil {
@@ -678,7 +679,7 @@ func TestExist(t *testing.T) {
 
 	query, _ := gplus.NewQuery[User]()
 
-	query.AddStrCond(fmt.Sprintf(" username = '%s' ", "afumu1"))
+	query.AddAndStrCond(fmt.Sprintf(" username = '%s' ", "afumu1"))
 
 	exist, dbErr := gplus.Exists(query)
 	if dbErr != nil {

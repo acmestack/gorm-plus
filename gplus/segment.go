@@ -44,3 +44,12 @@ type columnValue struct {
 func (cv *columnValue) getSqlSegment() string {
 	return ""
 }
+
+type applySqlSegment struct {
+	applySql string
+	params   []any
+}
+
+func (ass *applySqlSegment) getSqlSegment() string {
+	return ""
+}

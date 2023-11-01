@@ -18,10 +18,11 @@
 package tests
 
 import (
-	"github.com/aixj1984/gorm-plus/gplus"
-	"gorm.io/gorm"
 	"strings"
 	"testing"
+
+	"github.com/aixj1984/gorm-plus/gplus"
+	"gorm.io/gorm"
 )
 
 func TestSelectByIdName(t *testing.T) {

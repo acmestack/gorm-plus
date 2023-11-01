@@ -19,7 +19,6 @@ package gplus
 
 import (
 	"database/sql"
-	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -54,29 +53,6 @@ func (dao Dao[T]) NewQuery() (*QueryCond[T], *T) {
 
 func NewPage[T any](current, size int) *Page[T] {
 	return &Page[T]{Current: current, Size: size}
-}
-
-type Comparable interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~float32 | ~float64 | time.Time
-}
-
-type StreamingPage[T any, V Comparable] struct {
-	ColumnName any   `json:"columnName"` // 进行分页的列字段名称
-	StartValue V     `json:"startValue"` // 分页起始值
-	Limit      int   `json:"limit"`      // 页大小
-	Forward    bool  `json:"forward"`    // 上下页翻页标识
-	Total      int64 `json:"total"`      // 总记录数
-	Records    []*T  `json:"records"`    // 查询记录
-	RecordsMap []T   `json:"recordsMap"` // 查询记录Map
-}
-
-func NewStreamingPage[T any, V Comparable](columnName any, startValue V, limit int) *StreamingPage[T, V] {
-	return &StreamingPage[T, V]{
-		ColumnName: columnName,
-		StartValue: startValue,
-		Limit:      limit,
-		Forward:    true,
-	}
 }
 
 // Insert 插入一条记录
@@ -286,26 +262,6 @@ func SelectPage[T any](page *Page[T], q *QueryCond[T], opts ...OptionFunc) (*Pag
 	return page, resultDb
 }
 
-// SelectStreamingPage 根据条件分页查询记录
-func SelectStreamingPage[T any, V Comparable](page *StreamingPage[T, V], q *QueryCond[T], opts ...OptionFunc) (*StreamingPage[T, V], *gorm.DB) {
-	option := getOption(opts)
-
-	// 如果需要分页忽略总数，不查询总数
-	if !option.IgnoreTotal {
-		total, countDb := SelectCount[T](q, opts...)
-		if countDb.Error != nil {
-			return page, countDb
-		}
-		page.Total = total
-	}
-
-	resultDb := buildCondition(q, opts...)
-	var results []*T
-	resultDb.Scopes(streamingPaginate(page)).Find(&results)
-	page.Records = results
-	return page, resultDb
-}
-
 // SelectCount 根据条件查询记录数量
 func SelectCount[T any](q *QueryCond[T], opts ...OptionFunc) (int64, *gorm.DB) {
 	var count int64
@@ -354,34 +310,6 @@ func SelectPageGeneric[T any, R any](page *Page[R], q *QueryCond[T], opts ...Opt
 	return page, resultDb
 }
 
-// SelectStreamingPageGeneric 根据传入的泛型封装分页记录
-// 第一个泛型代表数据库表实体
-// 第二个泛型代表返回记录实体
-func SelectStreamingPageGeneric[T any, R any, V Comparable](page *StreamingPage[R, V], q *QueryCond[T], opts ...OptionFunc) (*StreamingPage[R, V], *gorm.DB) {
-	option := getOption(opts)
-	// 如果需要分页忽略总数，不查询总数
-	if !option.IgnoreTotal {
-		total, countDb := SelectCount[T](q, opts...)
-		if countDb.Error != nil {
-			return page, countDb
-		}
-		page.Total = total
-	}
-	resultDb := buildCondition(q, opts...)
-	var r R
-	switch any(r).(type) {
-	case map[string]any:
-		var results []R
-		resultDb.Scopes(streamingPaginate(page)).Scan(&results)
-		page.RecordsMap = results
-	default:
-		var results []*R
-		resultDb.Scopes(streamingPaginate(page)).Scan(&results)
-		page.Records = results
-	}
-	return page, resultDb
-}
-
 // SelectGeneric 根据传入的泛型封装记录
 // 第一个泛型代表数据库表实体
 // 第二个泛型代表返回记录实体
@@ -396,13 +324,6 @@ func Begin(opts ...*sql.TxOptions) *gorm.DB {
 	return db.Begin(opts...)
 }
 
-// Tx 事务
-func Tx(txFunc func(tx *gorm.DB) error, opts ...OptionFunc) error {
-	db := getDb(opts...)
-	return db.Transaction(txFunc)
-}
-
-// paginate offset分页
 func paginate[T any](p *Page[T]) func(db *gorm.DB) *gorm.DB {
 	page := p.Current
 	pageSize := p.Size
@@ -415,22 +336,6 @@ func paginate[T any](p *Page[T]) func(db *gorm.DB) *gorm.DB {
 		}
 		offset := (page - 1) * pageSize
 		return db.Offset(offset).Limit(pageSize)
-	}
-}
-
-// streamingPaginate 流式分页，根据自增ID、雪花ID、时间等数值类型或者时间类型分页
-// Tips: 相比于 offset 分页性能更好，走的是 range，缺点是没办法跳页查询
-func streamingPaginate[T any, V Comparable](p *StreamingPage[T, V]) func(db *gorm.DB) *gorm.DB {
-	column := getColumnName(p.ColumnName)
-	startValue := p.StartValue
-	limit := p.Limit
-	return func(db *gorm.DB) *gorm.DB {
-		// 下一页
-		if p.Forward {
-			return db.Where(fmt.Sprintf("%v > ?", column), startValue).Limit(limit)
-		}
-		// 上一页
-		return db.Where(fmt.Sprintf("%v < ?", column), startValue).Order(fmt.Sprintf("%v DESC", column)).Limit(limit)
 	}
 }
 

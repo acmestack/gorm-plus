@@ -20,20 +20,21 @@ package tests
 import (
 	"errors"
 	"fmt"
-	"github.com/aixj1984/gorm-plus/gplus"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 	"reflect"
 	"sort"
 	"strconv"
 	"testing"
+
+	"github.com/aixj1984/gorm-plus/gplus"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var gormDb *gorm.DB
 
 func init() {
-	dsn := "root:123456@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:my-secret-pw@tcp(127.0.0.1:3306)/test_db?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
 	gormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
@@ -183,7 +184,7 @@ func TestUpdateZeroById(t *testing.T) {
 	users := getUsers()
 	gplus.InsertBatch[User](users)
 
-	updateUser := &User{Base: Base{ID: users[0].ID, CreatedAt: users[0].CreatedAt}, Score: 100, Age: 25}
+	updateUser := &User{Base: Base{ID: users[0].ID}, Score: 100, Age: 25}
 
 	if res := gplus.UpdateZeroById[User](updateUser); res.Error != nil || res.RowsAffected != 1 {
 		t.Errorf("errors happened when deleteByIds: %v, affected: %v", res.Error, res.RowsAffected)
@@ -554,18 +555,6 @@ func TestSelectGeneric7(t *testing.T) {
 		if userMap[dept] != score {
 			t.Errorf("errors happened when SelectGeneric")
 		}
-	}
-}
-
-func TestTx(t *testing.T) {
-	deleteOldData()
-	users := getUsers()
-	err := gplus.Tx(func(tx *gorm.DB) error {
-		err := gplus.InsertBatch[User](users, gplus.Db(tx)).Error
-		return err
-	})
-	if err != nil {
-		t.Errorf(err.Error())
 	}
 }
 

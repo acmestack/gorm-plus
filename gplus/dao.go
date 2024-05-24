@@ -53,7 +53,7 @@ func NewPage[T any](current, size int) *Page[T] {
 	if current <= 0 {
 		current = 1
 	}
-	if size == 0 {
+	if size <= 0 {
 		size = 10
 	}
 	return &Page[T]{Current: current, Size: size}

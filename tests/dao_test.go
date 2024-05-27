@@ -296,6 +296,26 @@ func TestSelectPage(t *testing.T) {
 
 }
 
+func TestSelectPageDefaultPageParam(t *testing.T) {
+	deleteOldData()
+	users := getUsers()
+	gplus.InsertBatch[User](users)
+
+	query, model := gplus.NewQuery[User]()
+	page := gplus.NewPage[User](0, 0)
+	query.Eq(&model.Username, users[0].Username).Or().Eq(&model.Username, users[5].Username)
+	resultPage, db := gplus.SelectPage(page, query)
+	if db.Error != nil {
+		t.Errorf("errors happened when selectByIds : %v", db.Error)
+	}
+	if resultPage.Total != 2 {
+		t.Errorf("page total expects: %v, got %v", 2, resultPage.Total)
+	}
+
+	AssertObjEqual(t, page.Current, 1)
+	AssertObjEqual(t, page.Size, 10)
+}
+
 func TestSelectPageGeneric2(t *testing.T) {
 	deleteOldData()
 	users := getUsers()

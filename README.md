@@ -223,8 +223,11 @@ http://localhost:8080?q=A.username=zhangsan&q=B.username=lisi&gcond=A|B
 </a>
 
 ## 技术交流群
+
 如果二维码过时了，可以加微信：afumubit，注意备注：gplus
-![gplus](https://github.com/acmestack/gorm-plus/assets/50908453/e96b4f1f-753d-4cae-819c-efad3f780617)
+
+![gplus2](https://github.com/acmestack/gorm-plus/assets/50908453/fc61aeab-7c10-4bc2-b2f1-4ade5953a361)
+
 
 
 
